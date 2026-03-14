@@ -26,16 +26,14 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [lastTs, setLastTs] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Fetch session info
+  // Read languages from URL params (no API call needed)
   useEffect(() => {
-    fetch(`/api/sessions/${id}/poll?since=0`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.targetLanguages) {
-          setTargetLangs([data.sourceLanguage, ...data.targetLanguages]);
-        }
-      })
-      .catch(console.error);
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const p = new URLSearchParams(search);
+    const src = p.get("src") || "en";
+    const langs = p.get("langs")?.split(",").filter(Boolean) || [];
+    const all = [src, ...langs.filter((l) => l !== src)];
+    setTargetLangs(all);
   }, [id]);
 
   // Poll for new chunks

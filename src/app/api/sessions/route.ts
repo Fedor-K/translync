@@ -12,11 +12,13 @@ export async function POST(req: NextRequest) {
     }
 
     const session = createSession(targetLanguages, sourceLanguage || "en");
+    const src = sourceLanguage || "en";
+    const langsParam = targetLanguages.join(",");
 
     return NextResponse.json({
       sessionId: session.id,
-      listenUrl: `/listen/${session.id}`,
-      organizerUrl: `/session/${session.id}`,
+      listenUrl: `/listen/${session.id}?src=${src}&langs=${langsParam}`,
+      organizerUrl: `/session/${session.id}?src=${src}&langs=${langsParam}`,
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

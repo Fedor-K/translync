@@ -10,13 +10,13 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    // langs/src can come from session (same instance) or from query params (cross-instance)
     const session = getSession(id);
-    if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    }
-    if (!session.active) {
-      return NextResponse.json({ error: "Session ended" }, { status: 400 });
-    }
+    const srcParam = req.nextUrl.searchParams.get("src") || "en";
+    const langsParam = req.nextUrl.searchParams.get("langs") || "";
+    const sourceLanguage = session?.sourceLanguage || srcParam;
+    const targetLanguages = session?.targetLanguages ||
+      langsParam.split(",").filter((l) => l && l !== sourceLanguage);
 
     // Get audio blob from request
     const audioBuffer = await req.arrayBuffer();
@@ -33,7 +33,7 @@ export async function POST(
     const contentType = req.headers.get("x-audio-type") || "audio/webm";
 
     const dgResponse = await fetch(
-      `https://api.deepgram.com/v1/listen?language=${session.sourceLanguage}&punctuate=true&model=nova-3`,
+      `https://api.deepgram.com/v1/listen?language=${sourceLanguage}&punctuate=true&model=nova-3`,
       {
         method: "POST",
         headers: {
@@ -60,8 +60,8 @@ export async function POST(
     // Translate to all target languages
     const translations = await translateToMany(
       transcript,
-      session.targetLanguages,
-      session.sourceLanguage
+      targetLanguages,
+      sourceLanguage
     );
 
     const chunk = {

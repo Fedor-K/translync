@@ -8,21 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = getSession(id);
-  if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
-  }
-
   const since = Number(req.nextUrl.searchParams.get("since") || "0");
-  const lang = req.nextUrl.searchParams.get("lang") || session.sourceLanguage;
+  const lang = req.nextUrl.searchParams.get("lang") || "en";
 
-  const chunks = getChunksSince(id, since);
+  const session = getSession(id);
+  const chunks = session ? getChunksSince(id, since) : [];
 
   return NextResponse.json({
-    sessionId: session.id,
-    active: session.active,
-    sourceLanguage: session.sourceLanguage,
-    targetLanguages: session.targetLanguages,
+    sessionId: id,
+    active: session ? session.active : true,
     chunks: chunks.map((c) => ({
       id: c.id,
       timestamp: c.timestamp,

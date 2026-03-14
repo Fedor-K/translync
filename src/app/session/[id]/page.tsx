@@ -13,7 +13,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    setSessionUrl(`${window.location.origin}/listen/${id}`);
+    // Pass langs from current URL to listen URL
+    const search = window.location.search;
+    setSessionUrl(`${window.location.origin}/listen/${id}${search}`);
   }, [id]);
 
   const getMimeType = () => {
@@ -46,7 +48,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         const blob = new Blob(chunksRef.current, { type: actualType });
         chunksRef.current = [];
         try {
-          const res = await fetch(`/api/sessions/${id}/chunk`, {
+          const search = window.location.search;
+          const res = await fetch(`/api/sessions/${id}/chunk${search}`, {
             method: "POST",
             headers: { "x-audio-type": actualType },
             body: blob,
