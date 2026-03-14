@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, addChunk } from "@/lib/sessions";
+import { addChunk } from "@/lib/sessions";
 import { translateToMany } from "@/lib/translate";
 
 export const dynamic = "force-dynamic";
@@ -10,21 +10,15 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    // langs/src can come from session (same instance) or from query params (cross-instance)
-    const session = getSession(id);
     const srcParam = req.nextUrl.searchParams.get("src") || "en";
     const langsParam = req.nextUrl.searchParams.get("langs") || "";
-    const sourceLanguage = session?.sourceLanguage || srcParam;
-    const targetLanguages = session?.targetLanguages ||
-      langsParam.split(",").filter((l) => l && l !== sourceLanguage);
+    const targetLanguages = langsParam.split(",").filter((l) => l && l !== srcParam);
 
-    // Get audio blob from request
     const audioBuffer = await req.arrayBuffer();
     if (!audioBuffer.byteLength) {
       return NextResponse.json({ error: "No audio data" }, { status: 400 });
     }
 
-    // Transcribe with Deepgram
     const deepgramKey = process.env.DEEPGRAM_API_KEY;
     if (!deepgramKey) {
       return NextResponse.json({ error: "DEEPGRAM_API_KEY not set" }, { status: 500 });
@@ -33,7 +27,7 @@ export async function POST(
     const contentType = req.headers.get("x-audio-type") || "audio/webm";
 
     const dgResponse = await fetch(
-      `https://api.deepgram.com/v1/listen?language=${sourceLanguage}&punctuate=true&model=nova-3`,
+      `https://api.deepgram.com/v1/listen?language=${srcParam}&punctuate=true&model=nova-3`,
       {
         method: "POST",
         headers: {
@@ -57,12 +51,7 @@ export async function POST(
       return NextResponse.json({ transcript: "", translations: {} });
     }
 
-    // Translate to all target languages
-    const translations = await translateToMany(
-      transcript,
-      targetLanguages,
-      sourceLanguage
-    );
+    const translations = await translateToMany(transcript, targetLanguages, srcParam);
 
     const chunk = {
       id: Math.random().toString(36).slice(2),
@@ -71,7 +60,7 @@ export async function POST(
       translations,
     };
 
-    addChunk(id, chunk);
+    await addChunk(id, chunk);
 
     return NextResponse.json({ transcript, translations, chunkId: chunk.id });
   } catch (e) {

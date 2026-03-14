@@ -2,7 +2,7 @@ export interface TranscriptChunk {
   id: string;
   timestamp: number;
   original: string;
-  translations: Record<string, string>; // lang code -> translated text
+  translations: Record<string, string>;
 }
 
 export interface Session {
@@ -11,14 +11,38 @@ export interface Session {
   active: boolean;
   sourceLanguage: string;
   targetLanguages: string[];
-  chunks: TranscriptChunk[];
-  totalMinutes: number;
 }
 
-// In-memory store for MVP
-const sessions = new Map<string, Session>();
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL!;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN!;
 
-export function createSession(targetLanguages: string[], sourceLanguage = "en"): Session {
+async function redis(command: string, ...args: (string | number)[]) {
+  const url = `${REDIS_URL}/${command}/${args.map(encodeURIComponent).join("/")}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+  });
+  const data = await res.json();
+  return data.result;
+}
+
+async function redisPost(command: string, key: string, body: unknown) {
+  const url = `${REDIS_URL}/${command}/${encodeURIComponent(key)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REDIS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  return data.result;
+}
+
+export async function createSession(
+  targetLanguages: string[],
+  sourceLanguage = "en"
+): Promise<Session> {
   const id = Math.random().toString(36).slice(2, 8).toUpperCase();
   const session: Session = {
     id,
@@ -26,32 +50,45 @@ export function createSession(targetLanguages: string[], sourceLanguage = "en"):
     active: true,
     sourceLanguage,
     targetLanguages,
-    chunks: [],
-    totalMinutes: 0,
   };
-  sessions.set(id, session);
+  // Store session for 24 hours
+  await redisPost("set", `session:${id}`, JSON.stringify(session));
+  await redis("expire", `session:${id}`, 86400);
   return session;
 }
 
-export function getSession(id: string): Session | undefined {
-  return sessions.get(id.toUpperCase());
+export async function getSession(id: string): Promise<Session | null> {
+  const raw = await redis("get", `session:${id.toUpperCase()}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Session;
+  } catch {
+    return null;
+  }
 }
 
-export function addChunk(sessionId: string, chunk: TranscriptChunk): void {
-  const session = sessions.get(sessionId.toUpperCase());
+export async function addChunk(sessionId: string, chunk: TranscriptChunk): Promise<void> {
+  const key = `chunks:${sessionId.toUpperCase()}`;
+  await redisPost("rpush", key, JSON.stringify(chunk));
+  await redis("expire", key, 86400);
+}
+
+export async function getChunksSince(
+  sessionId: string,
+  since: number
+): Promise<TranscriptChunk[]> {
+  const raw = await redis("lrange", `chunks:${sessionId.toUpperCase()}`, 0, -1);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s: string) => {
+      try { return JSON.parse(s) as TranscriptChunk; } catch { return null; }
+    })
+    .filter((c): c is TranscriptChunk => c !== null && c.timestamp > since);
+}
+
+export async function endSession(sessionId: string): Promise<void> {
+  const session = await getSession(sessionId);
   if (!session) return;
-  session.chunks.push(chunk);
-  // Update total minutes (rough estimate)
-  session.totalMinutes = (Date.now() - session.createdAt) / 60000;
-}
-
-export function endSession(sessionId: string): void {
-  const session = sessions.get(sessionId.toUpperCase());
-  if (session) session.active = false;
-}
-
-export function getChunksSince(sessionId: string, since: number): TranscriptChunk[] {
-  const session = sessions.get(sessionId.toUpperCase());
-  if (!session) return [];
-  return session.chunks.filter((c) => c.timestamp > since);
+  session.active = false;
+  await redisPost("set", `session:${sessionId.toUpperCase()}`, JSON.stringify(session));
 }

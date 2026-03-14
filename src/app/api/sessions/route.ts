@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "targetLanguages required" }, { status: 400 });
     }
 
-    const session = createSession(targetLanguages, sourceLanguage || "en");
     const src = sourceLanguage || "en";
+    const session = await createSession(targetLanguages, src);
     const langsParam = targetLanguages.join(",");
 
     return NextResponse.json({
