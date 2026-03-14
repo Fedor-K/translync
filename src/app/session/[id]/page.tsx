@@ -4,7 +4,7 @@ import { use } from "react";
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [status, setStatus] = useState<"idle" | "recording" | "ended">("idle");
+  const [status, setStatus] = useState<"idle" | "requesting" | "recording" | "ended">("idle");
   const [transcript, setTranscript] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [sessionUrl, setSessionUrl] = useState("");
@@ -24,6 +24,26 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       if (MediaRecorder.isTypeSupported(type)) return type;
     }
     return ""; // browser default
+  };
+
+  const requestMic = async () => {
+    setError("");
+    setStatus("requesting");
+    try {
+      // Just check permission — don't start recording yet
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop()); // release immediately
+      setStatus("idle");
+      await startRecording();
+    } catch (e: unknown) {
+      const err = e as Error;
+      setStatus("idle");
+      if (err?.name === "NotAllowedError") {
+        setError("blocked");
+      } else {
+        setError("Microphone not found. Try a different browser.");
+      }
+    }
   };
 
   const startRecording = async () => {
@@ -65,11 +85,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     } catch (e: unknown) {
       const err = e as Error;
       if (err?.name === "NotAllowedError") {
-        setError("Microphone blocked. On iPhone: Settings → Safari → Microphone → Allow for translync.vercel.app");
+        setError("blocked");
       } else if (err?.name === "NotFoundError") {
         setError("No microphone found on this device.");
       } else {
-        setError("Could not access microphone. Please try in Chrome or Safari.");
+        setError("Could not access microphone.");
       }
     }
   };
@@ -123,16 +143,49 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
         {/* Controls */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm text-center">
-          {status === "idle" && (
+          {status === "idle" && error !== "blocked" && (
             <>
-              <p className="text-gray-500 mb-4">Press Start to begin capturing audio</p>
+              <p className="text-gray-500 mb-4">Press Start — browser will ask for microphone access</p>
               <button
-                onClick={startRecording}
+                onClick={requestMic}
                 className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-2xl text-lg transition"
               >
                 🎙️ Start Translation
               </button>
+              {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             </>
+          )}
+          {status === "requesting" && (
+            <>
+              <div className="text-4xl mb-3 animate-pulse">⏳</div>
+              <p className="text-blue-600 font-semibold">Allow microphone access in the popup...</p>
+            </>
+          )}
+          {error === "blocked" && (
+            <div className="text-left">
+              <div className="text-3xl mb-3 text-center">🔒</div>
+              <p className="font-bold text-gray-900 text-center mb-4">Microphone access blocked</p>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-4">
+                <p className="font-semibold mb-2">📱 On iPhone / Safari:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Open <strong>Settings</strong> app</li>
+                  <li>Scroll to <strong>Safari</strong></li>
+                  <li>Tap <strong>Microphone</strong></li>
+                  <li>Set to <strong>Allow</strong></li>
+                  <li>Come back and tap Start again</li>
+                </ol>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900 mb-4">
+                <p className="font-semibold mb-2">💻 On Chrome/Desktop:</p>
+                <p>Click the 🔒 lock icon in address bar → Microphone → Allow</p>
+              </div>
+              <button
+                onClick={() => { setError(""); setStatus("idle"); }}
+                className="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition"
+              >
+                Try Again
+              </button>
+            </div>
           )}
           {status === "recording" && (
             <>
@@ -153,7 +206,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               <p className="text-sm mt-1">Total segments: {transcript.length}</p>
             </div>
           )}
-          {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
         </div>
 
         {/* Live Transcript */}
