@@ -26,8 +26,9 @@ export async function POST(
 
     const contentType = req.headers.get("x-audio-type") || "audio/webm";
 
+    // nova-3 has limited language support; nova-2 supports 30+ languages including Russian
     const dgResponse = await fetch(
-      `https://api.deepgram.com/v1/listen?language=${srcParam}&punctuate=true&model=nova-3`,
+      `https://api.deepgram.com/v1/listen?language=${srcParam}&punctuate=true&model=nova-2`,
       {
         method: "POST",
         headers: {

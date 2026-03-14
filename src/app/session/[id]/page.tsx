@@ -62,9 +62,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           const data = await res.json();
           if (data.transcript) {
             setTranscript((prev) => [...prev, data.transcript]);
+          } else if (data.error) {
+            setTranscript((prev) => [...prev, `⚠️ ${data.error}`]);
           }
         } catch (e) {
-          console.error("Send error:", e);
+          setTranscript((prev) => [...prev, `⚠️ Network error: ${String(e)}`]);
         }
       }, 4000);
     } catch (e: unknown) {
