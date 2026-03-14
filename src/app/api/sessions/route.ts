@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession } from "@/lib/sessions";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { targetLanguages, sourceLanguage } = await req.json();
