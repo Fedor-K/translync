@@ -16,11 +16,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     setSessionUrl(`${window.location.origin}/listen/${id}`);
   }, [id]);
 
+  const getMimeType = () => {
+    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return ""; // browser default
+  };
+
   const startRecording = async () => {
     setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      const mimeType = getMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRef.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -33,12 +42,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       // Send chunks every 4 seconds
       intervalRef.current = setInterval(async () => {
         if (chunksRef.current.length === 0) return;
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const actualType = mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: actualType });
         chunksRef.current = [];
         try {
           const res = await fetch(`/api/sessions/${id}/chunk`, {
             method: "POST",
-            headers: { "x-audio-type": "audio/webm" },
+            headers: { "x-audio-type": actualType },
             body: blob,
           });
           const data = await res.json();
@@ -49,8 +59,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           console.error("Send error:", e);
         }
       }, 4000);
-    } catch (e) {
-      setError("Microphone access denied. Please allow microphone in browser settings.");
+    } catch (e: unknown) {
+      const err = e as Error;
+      if (err?.name === "NotAllowedError") {
+        setError("Microphone blocked. On iPhone: Settings → Safari → Microphone → Allow for translync.vercel.app");
+      } else if (err?.name === "NotFoundError") {
+        setError("No microphone found on this device.");
+      } else {
+        setError("Could not access microphone. Please try in Chrome or Safari.");
+      }
     }
   };
 
