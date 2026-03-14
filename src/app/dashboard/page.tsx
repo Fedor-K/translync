@@ -3,7 +3,7 @@ import { useState } from "react";
 import { LANGUAGE_NAMES } from "@/lib/translate";
 import { useRouter } from "next/navigation";
 
-const POPULAR_LANGS = ["es", "fr", "de", "ru", "zh", "ar", "pt", "it", "uk", "pl"];
+const POPULAR_LANGS = ["en", "es", "fr", "de", "ru", "zh", "ar", "pt", "it", "uk"];
 
 export default function Dashboard() {
   const router = useRouter();
