@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy client — не инициализируем при импорте (Vercel build time)
+let _client: OpenAI | null = null;
+function getClient() {
+  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _client;
+}
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English", es: "Spanish", fr: "French", de: "German",
@@ -20,7 +25,7 @@ export async function translateText(
 
   const targetName = LANGUAGE_NAMES[targetLang] || targetLang;
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: "gpt-4.1-nano",
     messages: [
       {
