@@ -57,44 +57,66 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     await startRecording();
   };
 
+  const streamRef = useRef<MediaStream | null>(null);
+  const isRecordingRef = useRef(false);
+
+  const sendChunk = async (blob: Blob, mimeType: string) => {
+    if (!blob.size) return;
+    try {
+      const search = window.location.search;
+      const res = await fetch(`/api/sessions/${id}/chunk${search}`, {
+        method: "POST",
+        headers: { "x-audio-type": mimeType },
+        body: blob,
+      });
+      const data = await res.json();
+      if (data.transcript) {
+        setTranscript((prev) => [...prev, data.transcript]);
+      } else if (data.error) {
+        setTranscript((prev) => [...prev, `⚠️ ${data.error}`]);
+      }
+    } catch (e) {
+      setTranscript((prev) => [...prev, `⚠️ Network error: ${String(e)}`]);
+    }
+  };
+
+  const recordOneCycle = (stream: MediaStream, mimeType: string) => {
+    if (!isRecordingRef.current) return;
+    const chunks: Blob[] = [];
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    mediaRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+      sendChunk(blob, mimeType || "audio/webm");
+      // Start next cycle
+      if (isRecordingRef.current) {
+        setTimeout(() => recordOneCycle(stream, mimeType), 100);
+      }
+    };
+
+    recorder.start();
+    // Stop after 5 seconds → triggers onstop → sends → starts new cycle
+    setTimeout(() => {
+      if (recorder.state === "recording") recorder.stop();
+    }, 5000);
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mimeType = getMimeType();
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRef.current = recorder;
 
       startVolumeMonitor(stream);
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      recorder.start(3000);
+      isRecordingRef.current = true;
       setStatus("recording");
 
-      intervalRef.current = setInterval(async () => {
-        if (chunksRef.current.length === 0) return;
-        const actualType = mimeType || "audio/webm";
-        const blob = new Blob(chunksRef.current, { type: actualType });
-        chunksRef.current = [];
-        try {
-          const search = window.location.search;
-          const res = await fetch(`/api/sessions/${id}/chunk${search}`, {
-            method: "POST",
-            headers: { "x-audio-type": actualType },
-            body: blob,
-          });
-          const data = await res.json();
-          if (data.transcript) {
-            setTranscript((prev) => [...prev, data.transcript]);
-          } else if (data.error) {
-            setTranscript((prev) => [...prev, `⚠️ ${data.error}`]);
-          }
-        } catch (e) {
-          setTranscript((prev) => [...prev, `⚠️ Network error: ${String(e)}`]);
-        }
-      }, 4000);
+      recordOneCycle(stream, mimeType);
     } catch (e: unknown) {
       const err = e as Error;
       setStatus("idle");
@@ -109,10 +131,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   };
 
   const stopRecording = () => {
-    if (mediaRef.current) {
-      mediaRef.current.stop();
-      mediaRef.current.stream.getTracks().forEach((t) => t.stop());
-    }
+    isRecordingRef.current = false;
+    if (mediaRef.current?.state === "recording") mediaRef.current.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
     if (intervalRef.current) clearInterval(intervalRef.current);
     stopVolumeMonitor();
     setStatus("ended");
