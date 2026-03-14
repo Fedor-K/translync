@@ -8,12 +8,14 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [transcript, setTranscript] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [sessionUrl, setSessionUrl] = useState("");
+  const [volume, setVolume] = useState(0); // 0–100
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Pass langs from current URL to listen URL
     const search = window.location.search;
     setSessionUrl(`${window.location.origin}/listen/${id}${search}`);
   }, [id]);
@@ -23,7 +25,30 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     for (const type of types) {
       if (MediaRecorder.isTypeSupported(type)) return type;
     }
-    return ""; // browser default
+    return "";
+  };
+
+  const startVolumeMonitor = (stream: MediaStream) => {
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const tick = () => {
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      setVolume(Math.min(100, avg * 2.5));
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  };
+
+  const stopVolumeMonitor = () => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    setVolume(0);
   };
 
   const requestMic = async () => {
@@ -39,14 +64,15 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRef.current = recorder;
 
+      startVolumeMonitor(stream);
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      recorder.start(3000); // collect 3s chunks
+      recorder.start(3000);
       setStatus("recording");
 
-      // Send chunks every 4 seconds
       intervalRef.current = setInterval(async () => {
         if (chunksRef.current.length === 0) return;
         const actualType = mimeType || "audio/webm";
@@ -71,6 +97,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       }, 4000);
     } catch (e: unknown) {
       const err = e as Error;
+      setStatus("idle");
       if (err?.name === "NotAllowedError") {
         setError("blocked");
       } else if (err?.name === "NotFoundError") {
@@ -87,14 +114,22 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       mediaRef.current.stream.getTracks().forEach((t) => t.stop());
     }
     if (intervalRef.current) clearInterval(intervalRef.current);
+    stopVolumeMonitor();
     setStatus("ended");
   };
 
   const listenUrl = sessionUrl || `https://translync.com/listen/${id}`;
 
+  // Volume bar — 8 segments
+  const bars = Array.from({ length: 8 }, (_, i) => {
+    const threshold = (i / 8) * 100;
+    const active = volume > threshold;
+    const color = i < 4 ? "bg-green-400" : i < 6 ? "bg-yellow-400" : "bg-red-400";
+    return { active, color };
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-blue-900 text-white px-6 py-4 flex items-center justify-between">
         <div>
           <span className="font-bold text-lg">Translync</span>
@@ -109,7 +144,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* QR / Share */}
+        {/* Share */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-1">Share with audience</h2>
           <p className="text-gray-500 text-sm mb-3">Attendees open this link on their phone</p>
@@ -176,8 +211,24 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           )}
           {status === "recording" && (
             <>
-              <div className="text-5xl mb-3 animate-pulse">🎙️</div>
-              <p className="text-green-600 font-semibold mb-4">Recording — speak into your microphone</p>
+              {/* Mic icon + volume bars */}
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <div className="text-4xl">🎙️</div>
+                <div className="flex items-end gap-1 h-10">
+                  {bars.map((bar, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 rounded-sm transition-all duration-75 ${
+                        bar.active ? bar.color : "bg-gray-200"
+                      }`}
+                      style={{ height: `${30 + i * 5}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <p className="text-green-600 font-semibold mb-4">
+                {volume > 5 ? "Hearing you..." : "Speak into microphone"}
+              </p>
               <button
                 onClick={stopRecording}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition"
