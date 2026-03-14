@@ -29,25 +29,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const requestMic = async () => {
     setError("");
     setStatus("requesting");
-    try {
-      // Just check permission — don't start recording yet
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop()); // release immediately
-      setStatus("idle");
-      await startRecording();
-    } catch (e: unknown) {
-      const err = e as Error;
-      setStatus("idle");
-      if (err?.name === "NotAllowedError") {
-        setError("blocked");
-      } else {
-        setError("Microphone not found. Try a different browser.");
-      }
-    }
+    await startRecording();
   };
 
   const startRecording = async () => {
-    setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = getMimeType();
