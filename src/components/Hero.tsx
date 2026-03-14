@@ -51,26 +51,32 @@ export default function Hero() {
 
         {/* CTA */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <a
+            href="/dashboard"
+            className="bg-green-500 hover:bg-green-400 text-white font-semibold px-8 py-3 rounded-lg transition text-center"
+          >
+            🎙️ Try for Free →
+          </a>
           {!submitted ? (
-            <form onSubmit={handleSubmit} className="flex gap-3 flex-col sm:flex-row">
+            <form onSubmit={handleSubmit} className="flex gap-3">
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Join waitlist"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="px-5 py-3 rounded-lg text-gray-900 w-72 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="px-5 py-3 rounded-lg text-gray-900 w-52 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
               <button
                 type="submit"
-                className="bg-green-500 hover:bg-green-400 text-white font-semibold px-6 py-3 rounded-lg transition"
+                className="bg-white/20 hover:bg-white/30 text-white font-semibold px-4 py-3 rounded-lg transition"
               >
-                Join Waitlist →
+                →
               </button>
             </form>
           ) : (
             <div className="bg-green-500/20 border border-green-400/40 rounded-lg px-6 py-3 text-green-300 font-medium">
-              ✅ You&apos;re on the list! We&apos;ll reach out soon.
+              ✅ You&apos;re on the list!
             </div>
           )}
         </div>
