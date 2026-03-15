@@ -48,13 +48,13 @@ export async function handleAudioWebSocket(
   let chunkCounter = 0;
 
   // Translate and publish a finalized sentence
-  async function translateAndPublish(text: string): Promise<void> {
+  async function translateAndPublish(text: string, speaker: number | null): Promise<void> {
     if (!text.trim()) return;
     text = text.trim();
 
     const chunkId = `${sessionId}-${++chunkCounter}`;
     const timestamp = Date.now();
-    console.log(`[ws] Translating chunk ${chunkId}: "${text.slice(0, 60)}..."`);
+    console.log(`[ws] Translating chunk ${chunkId} (speaker ${speaker}): "${text.slice(0, 60)}..."`);
 
     const translations = await translateToMany(text, sourceLang, targetLangs, sessionId);
 
@@ -70,6 +70,7 @@ export async function handleAudioWebSocket(
         type: "final",
         chunkId,
         text: translatedText,
+        speaker,
         timestamp,
       });
     }
@@ -77,19 +78,18 @@ export async function handleAudioWebSocket(
 
   dg.on("transcript", (event: TranscriptEvent) => {
     if (event.isFinal) {
-      // Every is_final = a complete phrase from Deepgram → translate immediately
-      // Context window ensures translation quality across phrases
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
         text: event.text,
+        speaker: event.speaker,
         timestamp: Date.now(),
       });
-      translateAndPublish(event.text);
+      translateAndPublish(event.text, event.speaker);
     } else {
-      // Interim result — show to speaker immediately
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
         text: event.text,
+        speaker: event.speaker,
         timestamp: Date.now(),
       });
     }

@@ -14,6 +14,7 @@ export interface TranscriptEvent {
   text: string;
   isFinal: boolean;
   speechFinal: boolean;
+  speaker: number | null; // speaker index from diarization
 }
 
 export class DeepgramStream extends EventEmitter {
@@ -37,6 +38,7 @@ export class DeepgramStream extends EventEmitter {
       interim_results: true,
       utterance_end_ms: 1000,
       vad_events: true,
+      diarize: true,
       encoding: "linear16",
       sample_rate: this.sampleRate,
       channels: 1,
@@ -53,14 +55,19 @@ export class DeepgramStream extends EventEmitter {
     this.connection.on(LiveTranscriptionEvents.Transcript, (data) => {
       const alt = data.channel?.alternatives?.[0];
       if (alt?.transcript) {
-        console.log(`[deepgram] Transcript: "${alt.transcript}" final=${data.is_final} speechFinal=${data.speech_final}`);
+        // Extract speaker from first word's diarization data
+        const speaker = alt.words?.[0]?.speaker ?? null;
+        console.log(`[deepgram] Transcript: "${alt.transcript}" final=${data.is_final} speaker=${speaker}`);
       }
       if (!alt?.transcript) return;
+
+      const speaker = alt.words?.[0]?.speaker ?? null;
 
       const event: TranscriptEvent = {
         text: alt.transcript,
         isFinal: data.is_final ?? false,
         speechFinal: data.speech_final ?? false,
+        speaker,
       };
       this.emit("transcript", event);
     });

@@ -16,6 +16,7 @@ interface Chunk {
   id: string;
   timestamp: number;
   text: string;
+  speaker: number | null;
 }
 
 // Web Audio API queue for gapless PCM playback
@@ -134,6 +135,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             id: data.chunkId,
             timestamp: data.timestamp,
             text: data.text,
+            speaker: data.speaker ?? null,
           };
           setChunks((prev) => {
             if (prev.some((c) => c.id === chunk.id)) return prev;
@@ -275,6 +277,16 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <div className="space-y-4">
             {chunks.map((chunk) => (
               <div key={chunk.id} className="bg-gray-800 rounded-xl p-4">
+                {chunk.speaker !== null && (
+                  <span className={`text-xs font-medium mb-1 inline-block px-2 py-0.5 rounded-full ${
+                    chunk.speaker === 0 ? "bg-blue-900 text-blue-300" :
+                    chunk.speaker === 1 ? "bg-emerald-900 text-emerald-300" :
+                    chunk.speaker === 2 ? "bg-purple-900 text-purple-300" :
+                    "bg-orange-900 text-orange-300"
+                  }`}>
+                    Speaker {chunk.speaker + 1}
+                  </span>
+                )}
                 <p className="text-white leading-relaxed">{chunk.text}</p>
               </div>
             ))}
