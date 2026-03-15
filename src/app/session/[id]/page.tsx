@@ -247,22 +247,52 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Share */}
+        {/* Share + QR */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-1">Share with audience</h2>
-          <p className="text-gray-500 text-sm mb-3">Attendees open this link on their phone</p>
-          <div className="flex items-center gap-3">
-            <input
-              readOnly
-              value={listenUrl}
-              className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-gray-50"
-            />
-            <button
-              onClick={() => navigator.clipboard.writeText(listenUrl)}
-              className="bg-blue-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-blue-800"
-            >
-              Copy
-            </button>
+          <p className="text-gray-500 text-sm mb-4">Attendees scan QR or open the link on their phone</p>
+
+          <div className="flex flex-col sm:flex-row gap-5">
+            {/* QR Code */}
+            <div className="flex-shrink-0 flex flex-col items-center">
+              <img
+                src={`/api/qr/${id}?src=${getParams().src}&langs=${getParams().langs}`}
+                alt="QR code"
+                className="w-36 h-36 rounded-xl border border-gray-100"
+              />
+              <a
+                href={`/api/qr/${id}?src=${getParams().src}&langs=${getParams().langs}`}
+                download={`translync-${id}.png`}
+                className="text-xs text-blue-600 hover:underline mt-2"
+              >
+                Download QR
+              </a>
+            </div>
+
+            {/* Link + actions */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-600 break-all font-mono mb-3 border border-gray-100">
+                {listenUrl}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(listenUrl)}
+                  className="bg-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-blue-700 font-medium"
+                >
+                  Copy Link
+                </button>
+                <a
+                  href={`/listen/${id}?${new URLSearchParams(getParams()).toString()}`}
+                  target="_blank"
+                  className="bg-gray-100 text-gray-700 text-sm px-4 py-2 rounded-xl hover:bg-gray-200 font-medium"
+                >
+                  Preview
+                </a>
+              </div>
+              <p className="text-xs text-gray-400 mt-3">
+                Session #{id} · {getParams().src.toUpperCase()} → {getParams().langs.toUpperCase().replace(/,/g, ", ")}
+              </p>
+            </div>
           </div>
         </div>
 
