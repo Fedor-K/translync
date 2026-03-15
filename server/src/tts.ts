@@ -1,9 +1,16 @@
-// OpenAI TTS — streams audio as PCM 24kHz 16-bit mono
-// Supports all languages, $0.015/1K chars
+// OpenAI TTS — streams PCM audio chunks as they arrive
+// PCM 24kHz 16-bit mono, $0.015/1K chars
+
+import type { WebSocket } from "ws";
 
 let openaiKey: string | undefined;
 
-export async function synthesize(text: string): Promise<Buffer> {
+// Stream TTS audio directly to a WebSocket as binary frames
+export async function streamTTS(
+  text: string,
+  ws: WebSocket,
+  chunkId: string
+): Promise<void> {
   openaiKey ??= process.env.OPENAI_API_KEY;
   if (!openaiKey) throw new Error("OPENAI_API_KEY not set");
 
@@ -17,7 +24,7 @@ export async function synthesize(text: string): Promise<Buffer> {
       model: "tts-1",
       voice: "nova",
       input: text,
-      response_format: "pcm", // raw 24kHz 16-bit mono LE
+      response_format: "pcm",
     }),
   });
 
@@ -26,16 +33,36 @@ export async function synthesize(text: string): Promise<Buffer> {
     throw new Error(`OpenAI TTS ${res.status}: ${body}`);
   }
 
-  // Collect all chunks into a single buffer
-  const chunks: Uint8Array[] = [];
   const reader = res.body?.getReader();
   if (!reader) throw new Error("No response body");
 
+  // Send audio_start marker
+  if (ws.readyState === 1) {
+    ws.send(
+      JSON.stringify({
+        type: "audio_start",
+        chunkId,
+        sampleRate: 24000,
+        channels: 1,
+        encoding: "pcm16",
+      })
+    );
+  }
+
+  // Stream binary audio chunks as they arrive from OpenAI
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    chunks.push(value);
+    if (ws.readyState === 1) {
+      ws.send(value);
+    } else {
+      reader.cancel();
+      break;
+    }
   }
 
-  return Buffer.concat(chunks);
+  // Send audio_end marker
+  if (ws.readyState === 1) {
+    ws.send(JSON.stringify({ type: "audio_end", chunkId }));
+  }
 }

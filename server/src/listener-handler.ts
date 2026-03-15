@@ -5,7 +5,7 @@ import {
   getChunksSince,
   subscribeToLanguage,
 } from "./redis.js";
-import { synthesize } from "./tts.js";
+import { streamTTS } from "./tts.js";
 
 export async function handleListenerWebSocket(
   ws: WebSocket,
@@ -13,7 +13,6 @@ export async function handleListenerWebSocket(
 ): Promise<void> {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   const pathParts = url.pathname.split("/").filter(Boolean);
-  // Expected: /session/:id/listen
   const sessionId = pathParts[1]?.toUpperCase();
   const lang = url.searchParams.get("lang") || "en";
   const since = parseInt(url.searchParams.get("since") || "0", 10);
@@ -34,10 +33,9 @@ export async function handleListenerWebSocket(
     `[listener] Connected: session=${sessionId}, lang=${lang}, tts=${ttsEnabled}`
   );
 
-  // Send connected event
   ws.send(JSON.stringify({ type: "connected", sessionId, lang }));
 
-  // Send historical chunks
+  // Send historical chunks (text only, no TTS)
   const history = await getChunksSince(sessionId, since);
   for (const chunk of history) {
     const text = chunk.translations[lang] || chunk.original;
@@ -49,7 +47,6 @@ export async function handleListenerWebSocket(
         timestamp: chunk.timestamp,
       })
     );
-    // Don't TTS history — would be too much audio at once
   }
 
   // Subscribe to live updates
@@ -57,31 +54,17 @@ export async function handleListenerWebSocket(
     sessionId,
     lang,
     async (data: string) => {
-      if (ws.readyState !== 1) return; // OPEN
+      if (ws.readyState !== 1) return;
 
       const parsed = JSON.parse(data);
 
-      // Forward text as JSON frame
+      // Forward text immediately
       ws.send(data);
 
-      // Generate TTS for final translations only
+      // Stream TTS audio as chunks arrive from OpenAI
       if (ttsEnabled && parsed.type === "final" && parsed.text) {
         try {
-          const audio = await synthesize(parsed.text);
-          // Send audio marker (so client knows audio follows)
-          ws.send(
-            JSON.stringify({
-              type: "audio_start",
-              chunkId: parsed.chunkId,
-              sampleRate: 24000,
-              channels: 1,
-              encoding: "pcm16",
-            })
-          );
-          // Send raw PCM audio as binary frame
-          ws.send(audio);
-          // Send audio end marker
-          ws.send(JSON.stringify({ type: "audio_end", chunkId: parsed.chunkId }));
+          await streamTTS(parsed.text, ws, parsed.chunkId);
         } catch (err) {
           console.error(
             `[tts] Failed for chunk ${parsed.chunkId}:`,
@@ -92,7 +75,6 @@ export async function handleListenerWebSocket(
     }
   );
 
-  // Keep-alive ping every 30 seconds
   const pingTimer = setInterval(() => {
     if (ws.readyState === 1) ws.ping();
   }, 30000);
@@ -100,9 +82,7 @@ export async function handleListenerWebSocket(
   ws.on("close", () => {
     clearInterval(pingTimer);
     unsubscribe();
-    console.log(
-      `[listener] Disconnected: session=${sessionId}, lang=${lang}`
-    );
+    console.log(`[listener] Disconnected: session=${sessionId}, lang=${lang}`);
   });
 
   ws.on("error", (err) => {
