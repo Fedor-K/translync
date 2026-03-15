@@ -49,11 +49,31 @@ export async function handleListenerWebSocket(
     );
   }
 
+  // TTS queue — generates in parallel, sends in order
+  // Each entry is a Promise<Buffer>. We process them sequentially
+  // but START generation immediately (don't wait for previous to finish).
+  let ttsChain = Promise.resolve();
+
+  function enqueueTTS(text: string): void {
+    // Start generating NOW (parallel with previous)
+    const audioPromise = synthesize(text);
+
+    // But send in order (chain)
+    ttsChain = ttsChain.then(async () => {
+      try {
+        const audio = await audioPromise;
+        if (ws.readyState === 1) ws.send(audio);
+      } catch (err) {
+        console.error(`[tts] Failed:`, (err as Error).message);
+      }
+    });
+  }
+
   // Subscribe to live updates
   const unsubscribe = await subscribeToLanguage(
     sessionId,
     lang,
-    async (data: string) => {
+    (data: string) => {
       if (ws.readyState !== 1) return;
 
       const parsed = JSON.parse(data);
@@ -61,14 +81,9 @@ export async function handleListenerWebSocket(
       // Forward text immediately
       ws.send(data);
 
-      // Server-side TTS — full buffer per sentence, queued on client
+      // Start TTS generation immediately (parallel), send in order
       if (ttsEnabled && parsed.type === "final" && parsed.text) {
-        try {
-          const audio = await synthesize(parsed.text);
-          if (ws.readyState === 1) ws.send(audio);
-        } catch (err) {
-          console.error(`[tts] Failed:`, (err as Error).message);
-        }
+        enqueueTTS(parsed.text);
       }
     }
   );

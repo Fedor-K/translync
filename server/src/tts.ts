@@ -17,7 +17,7 @@ export async function synthesize(text: string): Promise<Buffer> {
       voice: "nova",
       input: text,
       response_format: "pcm",
-      speed: 1.4,
+      speed: 1.2,
     }),
   });
 
