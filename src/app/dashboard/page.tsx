@@ -102,7 +102,7 @@ function QRModal({
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={copyLink}
-            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 rounded-xl text-sm transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm transition"
           >
             {copied ? "Copied!" : "Copy Link"}
           </button>
@@ -200,11 +200,11 @@ function CreateSessionModal({
                 onClick={() => setDomain(d.id)}
                 className={`px-3 py-3 rounded-xl text-sm font-medium border-2 transition text-left ${
                   domain === d.id
-                    ? "border-amber-500 bg-amber-50 text-amber-700"
-                    : "border-gray-200 text-gray-600 hover:border-amber-300"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:border-blue-300"
                 }`}
               >
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold mr-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mr-2">
                   {d.icon}
                 </span>
                 {d.name}
@@ -212,7 +212,7 @@ function CreateSessionModal({
             ))}
           </div>
           {domain === "ngo" && (
-            <p className="text-xs text-amber-600 mt-2">
+            <p className="text-xs text-blue-600 mt-2">
               Includes humanitarian terminology glossary (UNHCR, IASC, Sphere Standards)
             </p>
           )}
@@ -247,10 +247,10 @@ function CreateSessionModal({
                 disabled={lang === sourceLang}
                 className={`px-3 py-2 rounded-xl text-sm font-medium border-2 transition ${
                   selectedLangs.includes(lang)
-                    ? "border-amber-500 bg-amber-50 text-amber-700"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
                     : lang === sourceLang
                     ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                    : "border-gray-200 text-gray-600 hover:border-amber-300"
+                    : "border-gray-200 text-gray-600 hover:border-blue-300"
                 }`}
               >
                 {LANGUAGE_NAMES[lang]}
@@ -261,7 +261,7 @@ function CreateSessionModal({
 
         {/* Cost estimate */}
         {selectedLangs.length > 0 && (
-          <div className="bg-amber-50 rounded-xl px-4 py-3 mb-5 text-sm text-amber-700">
+          <div className="bg-blue-50 rounded-xl px-4 py-3 mb-5 text-sm text-blue-700">
             Est. cost: <strong>${(selectedLangs.length * 3).toFixed(0)}/hour</strong> ·{" "}
             {selectedLangs.length} language{selectedLangs.length > 1 ? "s" : ""}
           </div>
@@ -274,7 +274,7 @@ function CreateSessionModal({
         <button
           onClick={startSession}
           disabled={loading || selectedLangs.length === 0}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
         >
           {loading ? "Starting..." : "Start Translation Session"}
         </button>
@@ -323,7 +323,7 @@ function SessionRow({
   };
 
   return (
-    <div className="border border-gray-100 rounded-xl p-4 hover:border-amber-200 hover:bg-amber-50/30 transition group">
+    <div className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:bg-blue-50/30 transition group">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -356,7 +356,7 @@ function SessionRow({
         {session.exists && (
           <button
             onClick={() => router.push(organizerUrl)}
-            className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+            className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
           >
             Open
           </button>
@@ -427,21 +427,21 @@ export default function Dashboard() {
   const stats = data?.stats || { totalMinutes: 0, totalSessions: 0, languagesUsed: [] };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">T</span>
               </div>
               <span className="font-bold text-gray-900 text-lg">Translync</span>
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-              <span className="text-amber-700 font-semibold text-sm">U</span>
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-blue-700 font-semibold text-sm">U</span>
             </div>
           </div>
         </div>
@@ -459,7 +459,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden sm:block"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden sm:block"
           >
             + New Stream
           </button>
@@ -478,7 +478,7 @@ export default function Dashboard() {
                 </div>
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition sm:hidden"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition sm:hidden"
                 >
                   + New
                 </button>
@@ -492,8 +492,8 @@ export default function Dashboard() {
                   </div>
                 ) : sessions.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-                      <span className="text-amber-500 text-2xl font-bold">+</span>
+                    <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                      <span className="text-blue-500 text-2xl font-bold">+</span>
                     </div>
                     <p className="text-gray-500 font-medium mb-1">No streams yet</p>
                     <p className="text-gray-400 text-sm mb-4">
@@ -501,7 +501,7 @@ export default function Dashboard() {
                     </p>
                     <button
                       onClick={() => setShowCreate(true)}
-                      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition"
                     >
                       Create First Stream
                     </button>
@@ -520,7 +520,7 @@ export default function Dashboard() {
                     {/* Create new button at bottom */}
                     <button
                       onClick={() => setShowCreate(true)}
-                      className="w-full border-2 border-dashed border-gray-200 hover:border-amber-400 rounded-xl py-3 text-sm font-medium text-gray-400 hover:text-amber-600 transition"
+                      className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 rounded-xl py-3 text-sm font-medium text-gray-400 hover:text-blue-600 transition"
                     >
                       + Create new stream
                     </button>
@@ -540,11 +540,11 @@ export default function Dashboard() {
               </p>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-amber-50 rounded-xl p-3 text-center">
-                  <div className="text-2xl font-bold text-amber-600">{stats.totalMinutes}</div>
-                  <div className="text-xs text-amber-500 font-medium mt-0.5">Minutes</div>
+                <div className="bg-blue-50 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{stats.totalMinutes}</div>
+                  <div className="text-xs text-blue-500 font-medium mt-0.5">Minutes</div>
                 </div>
-                <div className="bg-stone-100 rounded-xl p-3 text-center">
+                <div className="bg-gray-100 rounded-xl p-3 text-center">
                   <div className="text-2xl font-bold text-gray-700">{stats.totalSessions}</div>
                   <div className="text-xs text-gray-500 font-medium mt-0.5">Sessions</div>
                 </div>
@@ -558,7 +558,7 @@ export default function Dashboard() {
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-amber-400 rounded-full transition-all"
+                    className="h-full bg-blue-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (stats.totalMinutes / 120) * 100)}%` }}
                   />
                 </div>
@@ -577,7 +577,7 @@ export default function Dashboard() {
                   {stats.languagesUsed.map((lang) => (
                     <span
                       key={lang}
-                      className="bg-stone-100 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full"
+                      className="bg-gray-100 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full"
                     >
                       {LANGUAGE_NAMES[lang] || lang}
                     </span>
@@ -587,7 +587,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick help card */}
-            <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white">
+            <div className="bg-gradient-to-br from-blue-600 to-green-500 rounded-2xl p-5 text-white">
               <h3 className="font-bold mb-1">How it works</h3>
               <ol className="text-sm text-white/90 space-y-1.5 list-decimal list-inside">
                 <li>Create a translation stream</li>
@@ -621,7 +621,7 @@ export default function Dashboard() {
       {/* Mobile FAB */}
       <button
         onClick={() => setShowCreate(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl font-bold transition sm:hidden z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl font-bold transition sm:hidden z-40"
         aria-label="New stream"
       >
         +
