@@ -34,8 +34,9 @@ export class DeepgramStream extends EventEmitter {
       interim_results: true,
       utterance_end_ms: 1000,
       vad_events: true,
-      // No encoding/sample_rate — browser sends WebM/Opus container,
-      // Deepgram auto-detects the format from the container header
+      encoding: "linear16",
+      sample_rate: 16000,
+      channels: 1,
     });
 
     this.connection.on(LiveTranscriptionEvents.Open, () => {

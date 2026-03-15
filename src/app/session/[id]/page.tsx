@@ -17,6 +17,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const workletRef = useRef<AudioWorkletNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const sseRef = useRef<EventSource | null>(null);
@@ -35,14 +37,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     const search = window.location.search;
     setSessionUrl(`${window.location.origin}/listen/${id}${search}`);
   }, [id]);
-
-  const getMimeType = () => {
-    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
-    for (const type of types) {
-      if (MediaRecorder.isTypeSupported(type)) return type;
-    }
-    return "";
-  };
 
   const startVolumeMonitor = (stream: MediaStream) => {
     const ctx = new AudioContext();
@@ -133,9 +127,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     setStatus("requesting");
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
+      });
       streamRef.current = stream;
-      const mimeType = getMimeType();
 
       // Connect WebSocket to RT server
       const ws = connectWS();
@@ -156,17 +151,27 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       startVolumeMonitor(stream);
       setStatus("recording");
 
-      // Stream audio via MediaRecorder with 200ms timeslice
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRef.current = recorder;
+      // Capture raw PCM audio and send as linear16 via WebSocket
+      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      audioCtxRef.current = audioCtx;
+      const source = audioCtx.createMediaStreamSource(stream);
 
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-          e.data.arrayBuffer().then((buf) => ws.send(buf));
+      // ScriptProcessorNode: capture raw float32 → convert to int16 → send
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = (e) => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        const float32 = e.inputBuffer.getChannelData(0);
+        // Convert float32 [-1, 1] to int16 [-32768, 32767]
+        const int16 = new Int16Array(float32.length);
+        for (let i = 0; i < float32.length; i++) {
+          const s = Math.max(-1, Math.min(1, float32[i]));
+          int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
         }
+        ws.send(int16.buffer);
       };
 
-      recorder.start(200); // 200ms chunks — key for low latency
+      source.connect(processor);
+      processor.connect(audioCtx.destination); // required for processing to work
     } catch (e: unknown) {
       const err = e as Error;
       setStatus("idle");
@@ -181,10 +186,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   };
 
   const stopRecording = () => {
-    if (mediaRef.current?.state === "recording") mediaRef.current.stop();
+    audioCtxRef.current?.close();
+    audioCtxRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     wsRef.current?.close();
-    sseCleanupRef.current?.(); // sets closed=true, prevents SSE reconnect
+    sseCleanupRef.current?.();
     sseCleanupRef.current = null;
     stopVolumeMonitor();
     setStatus("ended");
