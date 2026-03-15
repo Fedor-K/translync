@@ -18,7 +18,7 @@ export interface Session {
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL!;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN!;
 
-async function redis(command: string, ...args: (string | number)[]) {
+export async function redis(command: string, ...args: (string | number)[]) {
   const url = `${REDIS_URL}/${command}/${args.map(encodeURIComponent).join("/")}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
