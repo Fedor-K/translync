@@ -41,22 +41,17 @@ export async function handleAudioWebSocket(
   const dg = new DeepgramStream(sourceLang, sampleRate);
   let chunkCounter = 0;
 
-  // Buffer final transcripts for sentence-level translation
-  let sentenceBuffer = "";
-  let sentenceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  async function flushSentence(): Promise<void> {
-    if (!sentenceBuffer.trim()) return;
-    const text = sentenceBuffer.trim();
-    sentenceBuffer = "";
+  // Translate and publish a finalized sentence
+  async function translateAndPublish(text: string): Promise<void> {
+    if (!text.trim()) return;
+    text = text.trim();
 
     const chunkId = `${sessionId}-${++chunkCounter}`;
     const timestamp = Date.now();
+    console.log(`[ws] Translating chunk ${chunkId}: "${text.slice(0, 60)}..."`);
 
-    // Translate to all target languages in parallel
     const translations = await translateToMany(text, sourceLang, targetLangs, sessionId);
 
-    // Store for persistence / late joiners
     await storeChunk(sessionId, {
       id: chunkId,
       timestamp,
@@ -64,8 +59,6 @@ export async function handleAudioWebSocket(
       translations,
     });
 
-    // Publish each language to its Redis channel
-    // (translateToMany already includes sourceLang in results)
     for (const [lang, translatedText] of Object.entries(translations)) {
       await publishTranslation(sessionId, lang, {
         type: "final",
@@ -78,46 +71,22 @@ export async function handleAudioWebSocket(
 
   dg.on("transcript", (event: TranscriptEvent) => {
     if (event.isFinal) {
-      sentenceBuffer += " " + event.text;
-
-      // Publish interim of accumulated sentence to source channel
+      // Every is_final = a complete phrase from Deepgram → translate immediately
+      // Context window ensures translation quality across phrases
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
-        text: sentenceBuffer.trim(),
+        text: event.text,
         timestamp: Date.now(),
       });
-
-      // If speech_final (pause detected), flush immediately
-      if (event.speechFinal) {
-        if (sentenceTimer) clearTimeout(sentenceTimer);
-        sentenceTimer = null;
-        flushSentence();
-      } else {
-        // Otherwise debounce: flush after 1.5s of no new finals
-        if (sentenceTimer) clearTimeout(sentenceTimer);
-        sentenceTimer = setTimeout(() => {
-          sentenceTimer = null;
-          flushSentence();
-        }, 1500);
-      }
+      translateAndPublish(event.text);
     } else {
       // Interim result — show to speaker immediately
-      const interimText = sentenceBuffer
-        ? sentenceBuffer.trim() + " " + event.text
-        : event.text;
-
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
-        text: interimText,
+        text: event.text,
         timestamp: Date.now(),
       });
     }
-  });
-
-  dg.on("utterance_end", () => {
-    if (sentenceTimer) clearTimeout(sentenceTimer);
-    sentenceTimer = null;
-    flushSentence();
   });
 
   dg.on("error", (err) => {
@@ -142,9 +111,6 @@ export async function handleAudioWebSocket(
 
   ws.on("close", async () => {
     console.log(`[ws] Speaker disconnected: session=${sessionId}`);
-    // Flush any remaining text
-    if (sentenceTimer) clearTimeout(sentenceTimer);
-    await flushSentence();
     dg.close();
     clearContext(sessionId);
     await setSessionInactive(sessionId);
