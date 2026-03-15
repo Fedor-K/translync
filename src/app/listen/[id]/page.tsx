@@ -19,24 +19,18 @@ interface Chunk {
   speaker: number | null;
 }
 
-// Cancel-and-replace audio player: always plays only the latest TTS
+// Queued audio player: plays every sentence in order, no skipping
 class AudioPlayer {
   private ctx: AudioContext;
-  private currentSource: AudioBufferSourceNode | null = null;
+  private nextStartTime = 0;
 
   constructor() {
     this.ctx = new AudioContext({ sampleRate: 24000 });
   }
 
-  // Cancel current playback and play new audio
+  // Queue audio to play after current finishes
   play(pcm16: ArrayBuffer) {
     if (this.ctx.state === "suspended") this.ctx.resume();
-
-    // Cancel whatever is playing now
-    if (this.currentSource) {
-      try { this.currentSource.stop(); } catch {}
-      this.currentSource = null;
-    }
 
     const byteLen = pcm16.byteLength & ~1;
     if (byteLen < 2) return;
@@ -53,20 +47,21 @@ class AudioPlayer {
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(this.ctx.destination);
-    source.onended = () => { this.currentSource = null; };
-    source.start();
-    this.currentSource = source;
+
+    // Schedule after previous audio ends (gapless queue)
+    const now = this.ctx.currentTime;
+    const startTime = Math.max(now, this.nextStartTime);
+    source.start(startTime);
+    this.nextStartTime = startTime + buffer.duration;
   }
 
   stop() {
-    if (this.currentSource) {
-      try { this.currentSource.stop(); } catch {}
-      this.currentSource = null;
-    }
+    this.nextStartTime = 0;
+    this.ctx.close();
+    this.ctx = new AudioContext({ sampleRate: 24000 });
   }
 
   close() {
-    this.stop();
     this.ctx.close();
   }
 }
@@ -130,9 +125,6 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
 
         if (data.type === "connected") {
           setConnected(true);
-        } else if (data.type === "tts") {
-          // Server is about to send new audio — cancel current playback
-          audioPlayerRef.current?.stop();
         } else if (data.type === "interim") {
           setInterimText(data.text);
         } else if (data.type === "final") {

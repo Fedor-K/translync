@@ -61,13 +61,11 @@ export async function handleListenerWebSocket(
       // Forward text immediately
       ws.send(data);
 
-      // Server-side TTS with cancel-and-replace
+      // Server-side TTS — queue every sentence, no skipping
       if (ttsEnabled && parsed.type === "final" && parsed.text) {
         try {
           const audio = await synthesize(parsed.text);
           if (ws.readyState === 1) {
-            // Send "tts" marker so client cancels current playback
-            ws.send(JSON.stringify({ type: "tts" }));
             ws.send(audio);
           }
         } catch (err) {
