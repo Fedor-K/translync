@@ -37,17 +37,20 @@ async function translateOne(
       "\n";
   }
 
-  // Build domain prompt + glossary
+  // Build domain prompt + glossary (pre-filtered to matching terms only)
   const domainPrompt = domain?.systemPrompt || "";
-  const glossaryPrompt = domain ? buildGlossaryPrompt(domain, targetLang) : "";
+  const glossaryPrompt = domain ? buildGlossaryPrompt(domain, targetLang, text) : "";
 
-  // Build custom glossary prompt
+  // Build custom glossary prompt (pre-filtered)
   let customGlossaryPrompt = "";
   if (customGlossary) {
+    const textLower = text.toLowerCase();
     const entries: string[] = [];
     for (const [term, translations] of Object.entries(customGlossary)) {
       const t = translations[targetLang];
-      if (t) entries.push(`"${term}" → "${t}"`);
+      if (t && textLower.includes(term.toLowerCase())) {
+        entries.push(`"${term}" → "${t}"`);
+      }
     }
     if (entries.length > 0) {
       customGlossaryPrompt = `\n\nCustom terminology:\n${entries.join("\n")}\n`;

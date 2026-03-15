@@ -266,25 +266,39 @@ export function getDomain(domainId: string): DomainConfig {
   return DOMAINS[domainId] || DOMAINS.general;
 }
 
-// Build glossary instruction string for a specific target language
-export function buildGlossaryPrompt(domain: DomainConfig, targetLang: string): string {
-  const entries: string[] = [];
+// Pre-filter: scan source text, return only matching glossary terms + DNT
+export function buildGlossaryPrompt(
+  domain: DomainConfig,
+  targetLang: string,
+  sourceText?: string
+): string {
+  const textLower = sourceText?.toLowerCase() || "";
 
+  // Find matching glossary terms in source text
+  const matchedEntries: string[] = [];
   for (const [term, translations] of Object.entries(domain.glossary)) {
     const translation = translations[targetLang];
-    if (translation) {
-      entries.push(`"${term}" → "${translation}"`);
+    if (!translation) continue;
+    // Only include if term appears in source text (or no text provided → include all)
+    if (!sourceText || textLower.includes(term.toLowerCase())) {
+      matchedEntries.push(`"${term}" → "${translation}"`);
     }
   }
 
-  const dnt = domain.doNotTranslate;
+  // Find matching DNT terms in source text
+  const matchedDnt: string[] = [];
+  for (const dnt of domain.doNotTranslate) {
+    if (!sourceText || textLower.includes(dnt.toLowerCase())) {
+      matchedDnt.push(dnt);
+    }
+  }
 
   let prompt = "";
-  if (entries.length > 0) {
-    prompt += `\n\nGlossary — use these exact translations when these terms appear:\n${entries.join("\n")}\n`;
+  if (matchedEntries.length > 0) {
+    prompt += `\n\nGlossary — use these exact translations:\n${matchedEntries.join("\n")}\n`;
   }
-  if (dnt.length > 0) {
-    prompt += `\nDo NOT translate these terms/acronyms (keep as-is): ${dnt.join(", ")}\n`;
+  if (matchedDnt.length > 0) {
+    prompt += `\nDo NOT translate (keep as-is): ${matchedDnt.join(", ")}\n`;
   }
   return prompt;
 }
