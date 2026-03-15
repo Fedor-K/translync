@@ -5,7 +5,7 @@ import {
   getChunksSince,
   subscribeToLanguage,
 } from "./redis.js";
-import { streamTTS } from "./tts.js";
+import { synthesize } from "./tts.js";
 
 export async function handleListenerWebSocket(
   ws: WebSocket,
@@ -61,10 +61,13 @@ export async function handleListenerWebSocket(
       // Forward text immediately
       ws.send(data);
 
-      // Stream TTS audio as chunks arrive from OpenAI
+      // Generate TTS for final translations (full buffer, no streaming artifacts)
       if (ttsEnabled && parsed.type === "final" && parsed.text) {
         try {
-          await streamTTS(parsed.text, ws, parsed.chunkId);
+          const audio = await synthesize(parsed.text);
+          if (ws.readyState !== 1) return;
+          // Single binary frame with complete audio
+          ws.send(audio);
         } catch (err) {
           console.error(
             `[tts] Failed for chunk ${parsed.chunkId}:`,
