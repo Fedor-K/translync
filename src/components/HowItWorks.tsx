@@ -1,22 +1,19 @@
 export default function HowItWorks() {
   const steps = [
     {
-      icon: "🎙️",
       step: "01",
-      title: "Connect your mic",
-      desc: "Open Translync in any browser. Connect your microphone or existing audio system. No app download, no hardware.",
+      title: "Create a stream",
+      desc: "Select your target languages, name your session, and start in seconds. No downloads, no hardware, just a browser.",
     },
     {
-      icon: "⚡",
       step: "02",
-      title: "Start streaming",
-      desc: "Press Start. AI begins transcribing and translating in real-time. You see a live transcript — catch issues instantly.",
+      title: "Share the QR code",
+      desc: "A unique QR code is generated for your session. Project it on screen or share the link. Attendees scan with their phone.",
     },
     {
-      icon: "📱",
       step: "03",
-      title: "Audience listens",
-      desc: "Share a QR code. Attendees scan it, pick their language, and hear the translation on their phone — in under 2 seconds.",
+      title: "Speak naturally",
+      desc: "AI transcribes and translates in real-time. Your audience reads or hears the translation instantly in their chosen language.",
     },
   ];
 
@@ -24,22 +21,25 @@ export default function HowItWorks() {
     <section id="how-it-works" className="py-24 bg-white">
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             Up and running in 10 seconds
           </h2>
-          <p className="text-lg text-gray-500 max-w-xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-xl mx-auto">
             No training. No setup calls. No hardware to rent. Just open a
             browser and go.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {steps.map((s) => (
+          {steps.map((s, i) => (
             <div key={s.step} className="relative">
-              <div className="bg-blue-50 rounded-2xl p-8 h-full">
-                <div className="text-4xl mb-4">{s.icon}</div>
-                <div className="text-xs font-bold text-blue-400 tracking-widest mb-2">
-                  STEP {s.step}
+              {/* Connector line between steps on desktop */}
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute top-12 left-[calc(50%+60px)] w-[calc(100%-60px)] h-px bg-blue-200" />
+              )}
+              <div className="bg-blue-50 rounded-2xl p-8 h-full relative">
+                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold mb-5">
+                  {s.step}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">
                   {s.title}

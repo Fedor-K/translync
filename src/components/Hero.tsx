@@ -1,107 +1,105 @@
-"use client";
-import { useState } from "react";
-
 export default function Hero() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) setSubmitted(true);
-  };
-
   return (
-    <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+    <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Navigation */}
+      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold tracking-tight">Translync</span>
-          <span className="bg-blue-500 text-xs px-2 py-0.5 rounded-full font-medium">BETA</span>
         </div>
+
         <div className="hidden md:flex items-center gap-8 text-sm text-blue-200">
-          <a href="#how-it-works" className="hover:text-white transition">How it works</a>
-          <a href="#pricing" className="hover:text-white transition">Pricing</a>
-          <a href="#faq" className="hover:text-white transition">FAQ</a>
+          <a href="#how-it-works" className="hover:text-white transition-colors">
+            How it works
+          </a>
+          <a href="#pricing" className="hover:text-white transition-colors">
+            Pricing
+          </a>
+          <a href="#faq" className="hover:text-white transition-colors">
+            FAQ
+          </a>
         </div>
-        <a
-          href="#waitlist"
-          className="bg-white text-blue-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-blue-50 transition"
-        >
-          Join Waitlist
-        </a>
+
+        <div className="flex items-center gap-4">
+          <a
+            href="/login"
+            className="hidden sm:inline-block text-sm text-blue-200 hover:text-white transition-colors"
+          >
+            Sign in
+          </a>
+          <a
+            href="/dashboard"
+            className="bg-green-500 hover:bg-green-400 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
+          >
+            Start Free
+          </a>
+        </div>
       </nav>
 
       {/* Hero Content */}
-      <div className="max-w-5xl mx-auto px-6 py-24 text-center">
-        <div className="inline-flex items-center gap-2 bg-blue-700/60 border border-blue-500/40 rounded-full px-4 py-1.5 text-sm text-blue-200 mb-8">
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-          Now in beta · 500+ organizations on waitlist
-        </div>
-
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-16 pb-28 text-center">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-6">
           Real-Time AI Translation
           <br />
           <span className="text-blue-300">for Every Event</span>
         </h1>
 
-        <p className="text-xl text-blue-200 max-w-2xl mx-auto mb-10">
-          Your speaker talks. AI translates instantly. Audience listens in their
-          language — on any phone, in any language, with no hardware required.
+        <p className="text-lg sm:text-xl text-blue-200 max-w-2xl mx-auto mb-10 leading-relaxed">
+          Your speaker talks. Attendees hear it in their language — instantly.
+          No interpreters, no hardware, no setup.
         </p>
 
-        {/* CTA */}
+        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <a
             href="/dashboard"
-            className="bg-green-500 hover:bg-green-400 text-white font-semibold px-8 py-3 rounded-lg transition text-center"
+            className="inline-flex items-center justify-center bg-green-500 hover:bg-green-400 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
           >
-            🎙️ Try for Free →
+            Start Free
           </a>
-          {!submitted ? (
-            <form onSubmit={handleSubmit} className="flex gap-3">
-              <input
-                type="email"
-                placeholder="Join waitlist"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="px-5 py-3 rounded-lg text-gray-900 w-52 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <button
-                type="submit"
-                className="bg-white/20 hover:bg-white/30 text-white font-semibold px-4 py-3 rounded-lg transition"
-              >
-                →
-              </button>
-            </form>
-          ) : (
-            <div className="bg-green-500/20 border border-green-400/40 rounded-lg px-6 py-3 text-green-300 font-medium">
-              ✅ You&apos;re on the list!
-            </div>
-          )}
+          <a
+            href="#how-it-works"
+            className="inline-flex items-center justify-center bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors border border-white/20"
+          >
+            See How It Works
+          </a>
         </div>
 
-        {/* Mini stats */}
-        <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto text-center">
+        {/* Stats Bar */}
+        <div className="grid grid-cols-3 gap-6 sm:gap-8 max-w-lg mx-auto">
           <div>
-            <div className="text-3xl font-bold">70+</div>
+            <div className="text-3xl sm:text-4xl font-bold">70+</div>
             <div className="text-blue-300 text-sm mt-1">Languages</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">&lt;2s</div>
+            <div className="text-3xl sm:text-4xl font-bold">&lt;2s</div>
             <div className="text-blue-300 text-sm mt-1">Latency</div>
           </div>
           <div>
-            <div className="text-3xl font-bold">$3</div>
-            <div className="text-blue-300 text-sm mt-1">Per hour/lang</div>
+            <div className="text-3xl sm:text-4xl font-bold">$3</div>
+            <div className="text-blue-300 text-sm mt-1">Per hr / lang</div>
           </div>
         </div>
       </div>
 
-      {/* Wave */}
+      {/* Wave divider */}
       <div className="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 60L1440 60L1440 30C1200 60 900 0 720 0C540 0 240 60 0 30L0 60Z" fill="white" />
+        <svg
+          viewBox="0 0 1440 60"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0 60L1440 60L1440 30C1200 60 900 0 720 0C540 0 240 60 0 30L0 60Z"
+            fill="#f9fafb"
+          />
         </svg>
       </div>
     </section>

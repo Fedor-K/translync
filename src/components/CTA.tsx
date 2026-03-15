@@ -1,54 +1,29 @@
-"use client";
-import { useState } from "react";
-
 export default function CTA() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) setSubmitted(true);
-  };
-
   return (
-    <section id="waitlist" className="py-24 bg-blue-900 text-white">
-      <div className="max-w-3xl mx-auto px-6 text-center">
-        <h2 className="text-4xl font-bold mb-4">
-          Break language barriers at your next event
+    <section className="py-24 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0">
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+          Break Every Language Barrier
         </h2>
-        <p className="text-blue-300 text-lg mb-10 max-w-xl mx-auto">
-          Join 500+ churches, NGOs, and organizations already on the waitlist.
-          Be first to access Translync when we launch.
+        <p className="text-blue-200 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+          Start translating in under 10 seconds. No credit card required.
         </p>
 
-        {!submitted ? (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-3 justify-center"
-          >
-            <input
-              type="email"
-              placeholder="Enter your work email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="px-5 py-3 rounded-lg text-gray-900 w-80 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <button
-              type="submit"
-              className="bg-green-500 hover:bg-green-400 text-white font-semibold px-6 py-3 rounded-lg transition whitespace-nowrap"
-            >
-              Join Waitlist — It&apos;s Free →
-            </button>
-          </form>
-        ) : (
-          <div className="inline-flex items-center gap-3 bg-green-500/20 border border-green-400/40 rounded-xl px-8 py-4 text-green-300 font-medium text-lg">
-            ✅ You&apos;re on the list! We&apos;ll be in touch soon.
-          </div>
-        )}
+        <a
+          href="/dashboard"
+          className="inline-flex items-center justify-center bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-lg transition-colors text-lg"
+        >
+          Start Free
+        </a>
 
-        <p className="text-blue-400 text-sm mt-6">
-          Free 30-minute trial included · No credit card required
+        <p className="text-blue-300 text-sm mt-6">
+          30 free minutes included with every account
         </p>
       </div>
     </section>
