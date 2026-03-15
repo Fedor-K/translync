@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import type { WebSocket } from "ws";
 import { DeepgramStream, type TranscriptEvent } from "./deepgram.js";
-import { translateToMany } from "./translate.js";
+import { translateToMany, clearContext } from "./translate.js";
 import {
   getSession,
   storeChunk,
@@ -53,7 +53,7 @@ export async function handleAudioWebSocket(
     const timestamp = Date.now();
 
     // Translate to all target languages in parallel
-    const translations = await translateToMany(text, sourceLang, targetLangs);
+    const translations = await translateToMany(text, sourceLang, targetLangs, sessionId);
 
     // Store for persistence / late joiners
     await storeChunk(sessionId, {
@@ -137,6 +137,7 @@ export async function handleAudioWebSocket(
     if (sentenceTimer) clearTimeout(sentenceTimer);
     await flushSentence();
     dg.close();
+    clearContext(sessionId);
     await setSessionInactive(sessionId);
 
     // Notify listeners that session ended

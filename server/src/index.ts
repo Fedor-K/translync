@@ -1,30 +1,21 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { handleAudioWebSocket } from "./ws-handler.js";
+import { handleListenerWebSocket } from "./listener-handler.js";
 import { handleSSE } from "./sse-handler.js";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
-const ALLOWED_ORIGINS = (
-  process.env.ALLOWED_ORIGINS || "http://localhost:3000"
-).split(",");
-
-function corsHeaders(req: IncomingMessage): Record<string, string> {
-  const origin = req.headers.origin || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Credentials": "true",
-  };
-}
 
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
   // CORS preflight
   if (req.method === "OPTIONS") {
-    res.writeHead(204, corsHeaders(req));
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    });
     res.end();
     return;
   }
@@ -36,12 +27,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
-  // SSE endpoint: GET /session/:id/stream?lang=es&since=0
+  // SSE endpoint (kept for speaker transcript): GET /session/:id/stream
   if (req.method === "GET" && url.pathname.match(/^\/session\/[^/]+\/stream$/)) {
-    // Add CORS headers
-    for (const [k, v] of Object.entries(corsHeaders(req))) {
-      res.setHeader(k, v);
-    }
     try {
       await handleSSE(req, res);
     } catch (err) {
@@ -54,33 +41,42 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
-  // 404 for everything else
+  // 404
   res.writeHead(404, {
     "Content-Type": "text/plain",
-    ...corsHeaders(req),
+    "Access-Control-Allow-Origin": "*",
   });
   res.end("Not found");
 });
 
-// WebSocket server — handles audio from speakers
+// WebSocket server — handles both speaker audio and listener connections
 const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (req: IncomingMessage, socket, head) => {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
 
-  // Only upgrade for audio endpoint: /session/:id/audio
-  if (!url.pathname.match(/^\/session\/[^/]+\/audio$/)) {
-    socket.destroy();
+  // Speaker: /session/:id/audio
+  if (url.pathname.match(/^\/session\/[^/]+\/audio$/)) {
+    wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+      handleAudioWebSocket(ws, req);
+    });
     return;
   }
 
-  wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-    handleAudioWebSocket(ws, req);
-  });
+  // Listener: /session/:id/listen
+  if (url.pathname.match(/^\/session\/[^/]+\/listen$/)) {
+    wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+      handleListenerWebSocket(ws, req);
+    });
+    return;
+  }
+
+  socket.destroy();
 });
 
 server.listen(PORT, () => {
   console.log(`[translync-rt] Listening on port ${PORT}`);
-  console.log(`[translync-rt] WebSocket: ws://localhost:${PORT}/session/:id/audio`);
-  console.log(`[translync-rt] SSE:       http://localhost:${PORT}/session/:id/stream`);
+  console.log(`[translync-rt] Speaker WS:  ws://localhost:${PORT}/session/:id/audio`);
+  console.log(`[translync-rt] Listener WS: ws://localhost:${PORT}/session/:id/listen`);
+  console.log(`[translync-rt] Speaker SSE: http://localhost:${PORT}/session/:id/stream`);
 });

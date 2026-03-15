@@ -12,18 +12,55 @@ const LANGUAGE_NAMES: Record<string, string> = {
   uk: "Українська", ro: "Română", cs: "Čeština", hu: "Magyar",
 };
 
-const LANG_BCP47: Record<string, string> = {
-  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE",
-  it: "it-IT", pt: "pt-PT", ru: "ru-RU", zh: "zh-CN",
-  ja: "ja-JP", ko: "ko-KR", ar: "ar-SA", hi: "hi-IN",
-  nl: "nl-NL", pl: "pl-PL", tr: "tr-TR", sv: "sv-SE",
-  uk: "uk-UA", ro: "ro-RO", cs: "cs-CZ", hu: "hu-HU",
-};
-
 interface Chunk {
   id: string;
   timestamp: number;
   text: string;
+}
+
+// Web Audio API queue for gapless PCM playback
+class AudioQueue {
+  private ctx: AudioContext;
+  private nextStartTime = 0;
+
+  constructor() {
+    this.ctx = new AudioContext({ sampleRate: 24000 });
+  }
+
+  enqueue(pcm16: ArrayBuffer) {
+    // Ensure AudioContext is running (iOS Safari requires user gesture)
+    if (this.ctx.state === "suspended") this.ctx.resume();
+
+    const int16 = new Int16Array(pcm16);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) {
+      float32[i] = int16[i] / 32768;
+    }
+
+    const buffer = this.ctx.createBuffer(1, float32.length, 24000);
+    buffer.getChannelData(0).set(float32);
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.ctx.destination);
+
+    // Schedule precisely after previous chunk ends
+    const now = this.ctx.currentTime;
+    const startTime = Math.max(now, this.nextStartTime);
+    source.start(startTime);
+    this.nextStartTime = startTime + buffer.duration;
+  }
+
+  stop() {
+    this.nextStartTime = 0;
+    // Create new context to stop all playing audio
+    this.ctx.close();
+    this.ctx = new AudioContext({ sampleRate: 24000 });
+  }
+
+  close() {
+    this.ctx.close();
+  }
 }
 
 export default function ListenPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,16 +74,9 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [connected, setConnected] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const sseRef = useRef<EventSource | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioQueueRef = useRef<AudioQueue | null>(null);
   const lastTsRef = useRef(0);
-
-  const speak = useCallback((text: string, langCode: string) => {
-    if (!ttsEnabled || !window.speechSynthesis) return;
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = LANG_BCP47[langCode] || langCode;
-    utt.rate = 1.1;
-    window.speechSynthesis.speak(utt);
-  }, [ttsEnabled]);
 
   // Read languages from URL params
   useEffect(() => {
@@ -57,27 +87,44 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
     setTargetLangs(all);
   }, [id]);
 
-  // Connect SSE when started — manual reconnect to update `since` param
+  // Connect WebSocket when started
   useEffect(() => {
     if (!started || !lang) return;
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout>;
+    let pendingAudioChunkId: string | null = null;
+
+    // Initialize audio queue
+    if (!audioQueueRef.current) {
+      audioQueueRef.current = new AudioQueue();
+    }
 
     function connect() {
       if (closed) return;
       const since = lastTsRef.current;
-      const url = `${RT_URL}/session/${id}/stream?lang=${lang}&since=${since}`;
-      const sse = new EventSource(url);
-      sseRef.current = sse;
+      const tts = ttsEnabled ? "1" : "0";
+      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/listen?lang=${lang}&since=${since}&tts=${tts}`;
+      const ws = new WebSocket(wsUrl);
+      ws.binaryType = "arraybuffer";
+      wsRef.current = ws;
 
-      sse.addEventListener("connected", () => {
-        setConnected(true);
-      });
+      ws.onopen = () => setConnected(true);
 
-      sse.addEventListener("transcript", (e) => {
+      ws.onmessage = (e) => {
+        // Binary frame = PCM audio data
+        if (e.data instanceof ArrayBuffer) {
+          if (ttsEnabled && audioQueueRef.current) {
+            audioQueueRef.current.enqueue(e.data);
+          }
+          return;
+        }
+
+        // Text frame = JSON message
         const data = JSON.parse(e.data);
 
-        if (data.type === "interim") {
+        if (data.type === "connected") {
+          setConnected(true);
+        } else if (data.type === "interim") {
           setInterimText(data.text);
         } else if (data.type === "final") {
           setInterimText("");
@@ -91,19 +138,24 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             return [...prev, chunk];
           });
           lastTsRef.current = data.timestamp;
-          speak(data.text, lang);
+        } else if (data.type === "audio_start") {
+          pendingAudioChunkId = data.chunkId;
+        } else if (data.type === "audio_end") {
+          pendingAudioChunkId = null;
         } else if (data.type === "end") {
           setActive(false);
         }
-      });
+      };
 
-      sse.onerror = () => {
+      ws.onclose = () => {
         setConnected(false);
-        sse.close();
-        // Reconnect after 2s with updated `since` to avoid duplicate history
         if (!closed) {
           reconnectTimer = setTimeout(connect, 2000);
         }
+      };
+
+      ws.onerror = () => {
+        setConnected(false);
       };
     }
 
@@ -112,11 +164,11 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
     return () => {
       closed = true;
       clearTimeout(reconnectTimer);
-      sseRef.current?.close();
-      sseRef.current = null;
+      wsRef.current?.close();
+      wsRef.current = null;
       setConnected(false);
     };
-  }, [started, lang, id, speak]);
+  }, [started, lang, id, ttsEnabled]);
 
   // Auto-scroll
   useEffect(() => {
@@ -126,7 +178,8 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      sseRef.current?.close();
+      wsRef.current?.close();
+      audioQueueRef.current?.close();
     };
   }, []);
 
@@ -189,7 +242,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <button
             onClick={() => {
               setTtsEnabled((v) => {
-                if (v) window.speechSynthesis?.cancel();
+                if (v) audioQueueRef.current?.stop();
                 return !v;
               });
             }}
@@ -200,12 +253,11 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           </button>
           <button
             onClick={() => {
-              sseRef.current?.close();
+              wsRef.current?.close();
+              audioQueueRef.current?.stop();
               setStarted(false);
               setChunks([]);
               setInterimText("");
-              // Don't reset lastTsRef — on new language, only get NEW chunks
-              // (prevents TTS from replaying all history)
             }}
             className="text-gray-400 text-sm hover:text-white"
           >
