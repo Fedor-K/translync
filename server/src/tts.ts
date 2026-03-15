@@ -1,4 +1,5 @@
-// OpenAI TTS — PCM 24kHz 16-bit mono, $0.015/1K chars
+// OpenAI TTS — PCM 24kHz 16-bit mono
+// Speed 1.4x to keep up with live speech
 
 let openaiKey: string | undefined;
 
@@ -17,6 +18,7 @@ export async function synthesize(text: string): Promise<Buffer> {
       voice: "nova",
       input: text,
       response_format: "pcm",
+      speed: 1.4,
     }),
   });
 

@@ -5,7 +5,7 @@ import {
   getChunksSince,
   subscribeToLanguage,
 } from "./redis.js";
-// TTS handled client-side via browser Speech Synthesis
+import { synthesize } from "./tts.js";
 
 export async function handleListenerWebSocket(
   ws: WebSocket,
@@ -61,8 +61,19 @@ export async function handleListenerWebSocket(
       // Forward text immediately
       ws.send(data);
 
-      // TTS disabled server-side — client uses browser Speech Synthesis
-      // (instant, no latency, decent quality on modern browsers)
+      // Server-side TTS with cancel-and-replace
+      if (ttsEnabled && parsed.type === "final" && parsed.text) {
+        try {
+          const audio = await synthesize(parsed.text);
+          if (ws.readyState === 1) {
+            // Send "tts" marker so client cancels current playback
+            ws.send(JSON.stringify({ type: "tts" }));
+            ws.send(audio);
+          }
+        } catch (err) {
+          console.error(`[tts] Failed:`, (err as Error).message);
+        }
+      }
     }
   );
 

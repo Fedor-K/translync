@@ -19,32 +19,56 @@ interface Chunk {
   speaker: number | null;
 }
 
-const LANG_BCP47: Record<string, string> = {
-  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE",
-  it: "it-IT", pt: "pt-PT", ru: "ru-RU", zh: "zh-CN",
-  ja: "ja-JP", ko: "ko-KR", ar: "ar-SA", hi: "hi-IN",
-  nl: "nl-NL", pl: "pl-PL", tr: "tr-TR", sv: "sv-SE",
-  uk: "uk-UA", ro: "ro-RO", cs: "cs-CZ", hu: "hu-HU",
-};
+// Cancel-and-replace audio player: always plays only the latest TTS
+class AudioPlayer {
+  private ctx: AudioContext;
+  private currentSource: AudioBufferSourceNode | null = null;
 
-// Pick the best available voice for a language
-function getBestVoice(langCode: string): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis.getVoices();
-  const bcp = LANG_BCP47[langCode] || langCode;
-  const baseLang = bcp.split("-")[0];
-
-  // Prefer Google/Microsoft neural voices, then any matching voice
-  const preferred = ["Google", "Microsoft", "Natural", "Enhanced", "Premium"];
-  const matching = voices.filter(
-    (v) => v.lang.startsWith(baseLang)
-  );
-
-  for (const keyword of preferred) {
-    const found = matching.find((v) => v.name.includes(keyword));
-    if (found) return found;
+  constructor() {
+    this.ctx = new AudioContext({ sampleRate: 24000 });
   }
 
-  return matching[0] || null;
+  // Cancel current playback and play new audio
+  play(pcm16: ArrayBuffer) {
+    if (this.ctx.state === "suspended") this.ctx.resume();
+
+    // Cancel whatever is playing now
+    if (this.currentSource) {
+      try { this.currentSource.stop(); } catch {}
+      this.currentSource = null;
+    }
+
+    const byteLen = pcm16.byteLength & ~1;
+    if (byteLen < 2) return;
+
+    const int16 = new Int16Array(pcm16, 0, byteLen / 2);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) {
+      float32[i] = int16[i] / 32768;
+    }
+
+    const buffer = this.ctx.createBuffer(1, float32.length, 24000);
+    buffer.getChannelData(0).set(float32);
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.ctx.destination);
+    source.onended = () => { this.currentSource = null; };
+    source.start();
+    this.currentSource = source;
+  }
+
+  stop() {
+    if (this.currentSource) {
+      try { this.currentSource.stop(); } catch {}
+      this.currentSource = null;
+    }
+  }
+
+  close() {
+    this.stop();
+    this.ctx.close();
+  }
 }
 
 export default function ListenPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,28 +83,8 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const audioPlayerRef = useRef<AudioPlayer | null>(null);
   const lastTsRef = useRef(0);
-
-  // Adaptive TTS: cancel old speech if queue grows, speed up to catch up
-  const speak = useCallback((text: string, langCode: string) => {
-    if (!ttsEnabled || !window.speechSynthesis) return;
-
-    const synth = window.speechSynthesis;
-    const pending = synth.pending;
-
-    // If TTS is falling behind (2+ queued), cancel all and speak only latest
-    if (pending) {
-      synth.cancel();
-    }
-
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = LANG_BCP47[langCode] || langCode;
-    // Speed up slightly to help catch up (1.2x normal)
-    utt.rate = 1.2;
-    const voice = getBestVoice(langCode);
-    if (voice) utt.voice = voice;
-    synth.speak(utt);
-  }, [ttsEnabled]);
 
   // Read languages from URL params
   useEffect(() => {
@@ -97,21 +101,38 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
+    // Init audio player
+    if (!audioPlayerRef.current) {
+      audioPlayerRef.current = new AudioPlayer();
+    }
+
     function connect() {
       if (closed) return;
       const since = lastTsRef.current;
-      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/listen?lang=${lang}&since=${since}`;
+      const tts = ttsEnabled ? "1" : "0";
+      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/listen?lang=${lang}&since=${since}&tts=${tts}`;
       const ws = new WebSocket(wsUrl);
+      ws.binaryType = "arraybuffer";
       wsRef.current = ws;
 
       ws.onopen = () => setConnected(true);
 
       ws.onmessage = (e) => {
-        if (e.data instanceof ArrayBuffer) return; // ignore binary
+        // Binary frame = TTS audio (cancel current, play new)
+        if (e.data instanceof ArrayBuffer) {
+          if (ttsEnabled && audioPlayerRef.current) {
+            audioPlayerRef.current.play(e.data);
+          }
+          return;
+        }
+
         const data = JSON.parse(e.data);
 
         if (data.type === "connected") {
           setConnected(true);
+        } else if (data.type === "tts") {
+          // Server is about to send new audio — cancel current playback
+          audioPlayerRef.current?.stop();
         } else if (data.type === "interim") {
           setInterimText(data.text);
         } else if (data.type === "final") {
@@ -127,7 +148,6 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             return [...prev, chunk];
           });
           lastTsRef.current = data.timestamp;
-          speak(data.text, lang);
         } else if (data.type === "end") {
           setActive(false);
         }
@@ -154,7 +174,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
       wsRef.current = null;
       setConnected(false);
     };
-  }, [started, lang, id, ttsEnabled, speak]);
+  }, [started, lang, id, ttsEnabled]);
 
   // Auto-scroll
   useEffect(() => {
@@ -165,7 +185,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     return () => {
       wsRef.current?.close();
-      window.speechSynthesis?.cancel();
+      audioPlayerRef.current?.close();
     };
   }, []);
 
@@ -228,7 +248,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <button
             onClick={() => {
               setTtsEnabled((v) => {
-                if (v) window.speechSynthesis?.cancel();
+                if (v) audioPlayerRef.current?.stop();
                 return !v;
               });
             }}
@@ -240,7 +260,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <button
             onClick={() => {
               wsRef.current?.close();
-              window.speechSynthesis?.cancel();
+              audioPlayerRef.current?.stop();
               setStarted(false);
               setChunks([]);
               setInterimText("");
