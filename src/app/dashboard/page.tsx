@@ -32,8 +32,8 @@ export default function Dashboard() {
         body: JSON.stringify({ targetLanguages: selectedLangs, sourceLanguage: sourceLang }),
       });
       const data = await res.json();
-      if (data.sessionId) {
-        router.push(`/session/${data.sessionId}`);
+      if (data.organizerUrl) {
+        router.push(data.organizerUrl);
       } else {
         setError(data.error || "Failed to create session");
       }
