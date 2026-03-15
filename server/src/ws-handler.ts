@@ -21,6 +21,7 @@ export async function handleAudioWebSocket(
   const targetLangs = (url.searchParams.get("langs") || "")
     .split(",")
     .filter(Boolean);
+  const sampleRate = parseInt(url.searchParams.get("sr") || "48000", 10);
 
   if (!sessionId) {
     ws.close(4000, "Missing session ID");
@@ -34,10 +35,10 @@ export async function handleAudioWebSocket(
   }
 
   console.log(
-    `[ws] Speaker connected: session=${sessionId}, src=${sourceLang}, langs=${targetLangs.join(",")}`
+    `[ws] Speaker connected: session=${sessionId}, src=${sourceLang}, langs=${targetLangs.join(",")}, sr=${sampleRate}`
   );
 
-  const dg = new DeepgramStream(sourceLang);
+  const dg = new DeepgramStream(sourceLang, sampleRate);
   let chunkCounter = 0;
 
   // Buffer final transcripts for sentence-level translation
@@ -127,7 +128,15 @@ export async function handleAudioWebSocket(
   await dg.start();
 
   // Forward audio from WebSocket to Deepgram
+  let msgCount = 0;
   ws.on("message", (data: Buffer) => {
+    msgCount++;
+    if (msgCount === 1) {
+      console.log(`[ws] First audio chunk: ${data.byteLength} bytes`);
+    }
+    if (msgCount % 100 === 0) {
+      console.log(`[ws] Audio chunks received: ${msgCount}`);
+    }
     dg.send(data);
   });
 

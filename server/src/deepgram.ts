@@ -19,14 +19,17 @@ export interface TranscriptEvent {
 export class DeepgramStream extends EventEmitter {
   private connection: LiveClient | null = null;
   private language: string;
+  private sampleRate: number;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 
-  constructor(language: string) {
+  constructor(language: string, sampleRate = 48000) {
     super();
     this.language = language;
+    this.sampleRate = sampleRate;
   }
 
   async start(): Promise<void> {
+    console.log(`[deepgram] Starting: lang=${this.language}, sr=${this.sampleRate}`);
     this.connection = deepgram.listen.live({
       model: "nova-2",
       language: this.language,
@@ -35,7 +38,7 @@ export class DeepgramStream extends EventEmitter {
       utterance_end_ms: 1000,
       vad_events: true,
       encoding: "linear16",
-      sample_rate: 16000,
+      sample_rate: this.sampleRate,
       channels: 1,
     });
 
@@ -49,6 +52,9 @@ export class DeepgramStream extends EventEmitter {
 
     this.connection.on(LiveTranscriptionEvents.Transcript, (data) => {
       const alt = data.channel?.alternatives?.[0];
+      if (alt?.transcript) {
+        console.log(`[deepgram] Transcript: "${alt.transcript}" final=${data.is_final} speechFinal=${data.speech_final}`);
+      }
       if (!alt?.transcript) return;
 
       const event: TranscriptEvent = {

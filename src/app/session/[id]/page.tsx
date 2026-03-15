@@ -128,14 +128,24 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
       });
       streamRef.current = stream;
 
-      // Connect WebSocket to RT server
-      const ws = connectWS();
+      // Detect actual sample rate
+      const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
+      const actualSampleRate = audioCtx.sampleRate;
+      console.log(`[audio] Native sample rate: ${actualSampleRate}`);
 
-      // Wait for WS to open before starting recording
+      // Connect WebSocket to RT server — pass actual sample rate
+      const { src, langs } = getParams();
+      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/audio?src=${src}&langs=${langs}&sr=${actualSampleRate}`;
+      const ws = new WebSocket(wsUrl);
+      ws.binaryType = "arraybuffer";
+      wsRef.current = ws;
+
+      // Wait for WS to open
       await new Promise<void>((resolve, reject) => {
         ws.onopen = () => {
           setConnected(true);
@@ -152,8 +162,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       setStatus("recording");
 
       // Capture raw PCM audio and send as linear16 via WebSocket
-      const audioCtx = new AudioContext({ sampleRate: 16000 });
-      audioCtxRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
 
       // ScriptProcessorNode: capture raw float32 → convert to int16 → send
@@ -161,7 +169,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       processor.onaudioprocess = (e) => {
         if (ws.readyState !== WebSocket.OPEN) return;
         const float32 = e.inputBuffer.getChannelData(0);
-        // Convert float32 [-1, 1] to int16 [-32768, 32767]
         const int16 = new Int16Array(float32.length);
         for (let i = 0; i < float32.length; i++) {
           const s = Math.max(-1, Math.min(1, float32[i]));
@@ -171,7 +178,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       };
 
       source.connect(processor);
-      processor.connect(audioCtx.destination); // required for processing to work
+      processor.connect(audioCtx.destination);
     } catch (e: unknown) {
       const err = e as Error;
       setStatus("idle");
