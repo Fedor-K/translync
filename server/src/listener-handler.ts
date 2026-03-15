@@ -5,7 +5,7 @@ import {
   getChunksSince,
   subscribeToLanguage,
 } from "./redis.js";
-import { synthesize } from "./tts.js";
+// TTS handled client-side via browser Speech Synthesis
 
 export async function handleListenerWebSocket(
   ws: WebSocket,
@@ -61,20 +61,8 @@ export async function handleListenerWebSocket(
       // Forward text immediately
       ws.send(data);
 
-      // Generate TTS for final translations (full buffer, no streaming artifacts)
-      if (ttsEnabled && parsed.type === "final" && parsed.text) {
-        try {
-          const audio = await synthesize(parsed.text);
-          if (ws.readyState !== 1) return;
-          // Single binary frame with complete audio
-          ws.send(audio);
-        } catch (err) {
-          console.error(
-            `[tts] Failed for chunk ${parsed.chunkId}:`,
-            (err as Error).message
-          );
-        }
-      }
+      // TTS disabled server-side — client uses browser Speech Synthesis
+      // (instant, no latency, decent quality on modern browsers)
     }
   );
 

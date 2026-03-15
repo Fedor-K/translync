@@ -19,51 +19,32 @@ interface Chunk {
   speaker: number | null;
 }
 
-// Web Audio API queue for gapless PCM playback
-class AudioQueue {
-  private ctx: AudioContext;
-  private nextStartTime = 0;
+const LANG_BCP47: Record<string, string> = {
+  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE",
+  it: "it-IT", pt: "pt-PT", ru: "ru-RU", zh: "zh-CN",
+  ja: "ja-JP", ko: "ko-KR", ar: "ar-SA", hi: "hi-IN",
+  nl: "nl-NL", pl: "pl-PL", tr: "tr-TR", sv: "sv-SE",
+  uk: "uk-UA", ro: "ro-RO", cs: "cs-CZ", hu: "hu-HU",
+};
 
-  constructor() {
-    this.ctx = new AudioContext({ sampleRate: 24000 });
+// Pick the best available voice for a language
+function getBestVoice(langCode: string): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  const bcp = LANG_BCP47[langCode] || langCode;
+  const baseLang = bcp.split("-")[0];
+
+  // Prefer Google/Microsoft neural voices, then any matching voice
+  const preferred = ["Google", "Microsoft", "Natural", "Enhanced", "Premium"];
+  const matching = voices.filter(
+    (v) => v.lang.startsWith(baseLang)
+  );
+
+  for (const keyword of preferred) {
+    const found = matching.find((v) => v.name.includes(keyword));
+    if (found) return found;
   }
 
-  // Play a complete PCM16 audio buffer (no streaming, no artifacts)
-  play(pcm16: ArrayBuffer) {
-    if (this.ctx.state === "suspended") this.ctx.resume();
-
-    const byteLen = pcm16.byteLength & ~1; // ensure even
-    if (byteLen < 2) return;
-
-    const int16 = new Int16Array(pcm16, 0, byteLen / 2);
-    const float32 = new Float32Array(int16.length);
-    for (let i = 0; i < int16.length; i++) {
-      float32[i] = int16[i] / 32768;
-    }
-
-    const buffer = this.ctx.createBuffer(1, float32.length, 24000);
-    buffer.getChannelData(0).set(float32);
-
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(this.ctx.destination);
-
-    // Schedule after previous audio ends
-    const now = this.ctx.currentTime;
-    const startTime = Math.max(now, this.nextStartTime);
-    source.start(startTime);
-    this.nextStartTime = startTime + buffer.duration;
-  }
-
-  stop() {
-    this.nextStartTime = 0;
-    this.ctx.close();
-    this.ctx = new AudioContext({ sampleRate: 24000 });
-  }
-
-  close() {
-    this.ctx.close();
-  }
+  return matching[0] || null;
 }
 
 export default function ListenPage({ params }: { params: Promise<{ id: string }> }) {
@@ -78,8 +59,17 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const audioQueueRef = useRef<AudioQueue | null>(null);
   const lastTsRef = useRef(0);
+
+  const speak = useCallback((text: string, langCode: string) => {
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = LANG_BCP47[langCode] || langCode;
+    utt.rate = 1.1;
+    const voice = getBestVoice(langCode);
+    if (voice) utt.voice = voice;
+    window.speechSynthesis.speak(utt);
+  }, [ttsEnabled]);
 
   // Read languages from URL params
   useEffect(() => {
@@ -95,34 +85,18 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
     if (!started || !lang) return;
     let closed = false;
     let reconnectTimer: ReturnType<typeof setTimeout>;
-    let pendingAudioChunkId: string | null = null;
-
-    // Initialize audio queue
-    if (!audioQueueRef.current) {
-      audioQueueRef.current = new AudioQueue();
-    }
 
     function connect() {
       if (closed) return;
       const since = lastTsRef.current;
-      const tts = ttsEnabled ? "1" : "0";
-      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/listen?lang=${lang}&since=${since}&tts=${tts}`;
+      const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/listen?lang=${lang}&since=${since}`;
       const ws = new WebSocket(wsUrl);
-      ws.binaryType = "arraybuffer";
       wsRef.current = ws;
 
       ws.onopen = () => setConnected(true);
 
       ws.onmessage = (e) => {
-        // Binary frame = complete PCM audio for one sentence
-        if (e.data instanceof ArrayBuffer) {
-          if (ttsEnabled && audioQueueRef.current) {
-            audioQueueRef.current.play(e.data);
-          }
-          return;
-        }
-
-        // Text frame = JSON message
+        if (e.data instanceof ArrayBuffer) return; // ignore binary
         const data = JSON.parse(e.data);
 
         if (data.type === "connected") {
@@ -142,6 +116,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             return [...prev, chunk];
           });
           lastTsRef.current = data.timestamp;
+          speak(data.text, lang);
         } else if (data.type === "end") {
           setActive(false);
         }
@@ -168,7 +143,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
       wsRef.current = null;
       setConnected(false);
     };
-  }, [started, lang, id, ttsEnabled]);
+  }, [started, lang, id, ttsEnabled, speak]);
 
   // Auto-scroll
   useEffect(() => {
@@ -179,7 +154,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     return () => {
       wsRef.current?.close();
-      audioQueueRef.current?.close();
+      window.speechSynthesis?.cancel();
     };
   }, []);
 
@@ -242,7 +217,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <button
             onClick={() => {
               setTtsEnabled((v) => {
-                if (v) audioQueueRef.current?.stop();
+                if (v) window.speechSynthesis?.cancel();
                 return !v;
               });
             }}
@@ -254,7 +229,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <button
             onClick={() => {
               wsRef.current?.close();
-              audioQueueRef.current?.stop();
+              window.speechSynthesis?.cancel();
               setStarted(false);
               setChunks([]);
               setInterimText("");
