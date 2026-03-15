@@ -61,14 +61,25 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const wsRef = useRef<WebSocket | null>(null);
   const lastTsRef = useRef(0);
 
+  // Adaptive TTS: cancel old speech if queue grows, speed up to catch up
   const speak = useCallback((text: string, langCode: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
+
+    const synth = window.speechSynthesis;
+    const pending = synth.pending;
+
+    // If TTS is falling behind (2+ queued), cancel all and speak only latest
+    if (pending) {
+      synth.cancel();
+    }
+
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = LANG_BCP47[langCode] || langCode;
-    utt.rate = 1.1;
+    // Speed up slightly to help catch up (1.2x normal)
+    utt.rate = 1.2;
     const voice = getBestVoice(langCode);
     if (voice) utt.voice = voice;
-    window.speechSynthesis.speak(utt);
+    synth.speak(utt);
   }, [ttsEnabled]);
 
   // Read languages from URL params
