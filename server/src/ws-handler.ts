@@ -47,19 +47,12 @@ export async function handleAudioWebSocket(
   const dg = new DeepgramStream(sourceLang, sampleRate);
   let chunkCounter = 0;
 
-  // Smart buffer: collect is_final texts, flush after 500ms pause or 3s max
-  let sentenceBuffer = "";
-  let bufferSpeaker: number | null = null;
-  let flushTimer: ReturnType<typeof setTimeout> | null = null;
-  let bufferStartTime = 0;
-
   async function translateAndPublish(text: string, speaker: number | null): Promise<void> {
     if (!text.trim()) return;
     text = text.trim();
 
     const chunkId = `${sessionId}-${++chunkCounter}`;
     const timestamp = Date.now();
-    console.log(`[ws] Translating chunk ${chunkId} (speaker ${speaker}): "${text.slice(0, 80)}"`);
 
     const translations = await translateToMany(text, sourceLang, targetLangs, sessionId);
 
@@ -81,59 +74,19 @@ export async function handleAudioWebSocket(
     }
   }
 
-  function flushBuffer(): void {
-    if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
-    if (!sentenceBuffer.trim()) return;
-    const text = sentenceBuffer.trim();
-    const speaker = bufferSpeaker;
-    sentenceBuffer = "";
-    bufferSpeaker = null;
-    bufferStartTime = 0;
-    translateAndPublish(text, speaker);
-  }
-
   dg.on("transcript", (event: TranscriptEvent) => {
     if (event.isFinal) {
-      // Speaker changed → flush previous buffer
-      if (bufferSpeaker !== null && event.speaker !== null && event.speaker !== bufferSpeaker) {
-        flushBuffer();
-      }
-
-      sentenceBuffer += " " + event.text;
-      bufferSpeaker = event.speaker;
-      if (!bufferStartTime) bufferStartTime = Date.now();
-
-      // Show interim to speaker
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
-        text: sentenceBuffer.trim(),
+        text: event.text,
         speaker: event.speaker,
         timestamp: Date.now(),
       });
-
-      // Flush immediately on speech_final (pause detected)
-      if (event.speechFinal) {
-        flushBuffer();
-        return;
-      }
-
-      // Flush if buffer has been accumulating > 3 seconds
-      if (Date.now() - bufferStartTime > 3000) {
-        flushBuffer();
-        return;
-      }
-
-      // Otherwise debounce 500ms
-      if (flushTimer) clearTimeout(flushTimer);
-      flushTimer = setTimeout(flushBuffer, 500);
+      translateAndPublish(event.text, event.speaker);
     } else {
-      // Interim — show immediately
-      const interimText = sentenceBuffer
-        ? sentenceBuffer.trim() + " " + event.text
-        : event.text;
       publishTranslation(sessionId, sourceLang, {
         type: "interim",
-        text: interimText,
+        text: event.text,
         speaker: event.speaker,
         timestamp: Date.now(),
       });
@@ -162,7 +115,6 @@ export async function handleAudioWebSocket(
 
   ws.on("close", async () => {
     console.log(`[ws] Speaker disconnected: session=${sessionId}`);
-    flushBuffer();
     dg.close();
     clearContext(sessionId);
     clearSessionDomain(sessionId);

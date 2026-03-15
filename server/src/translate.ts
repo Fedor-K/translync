@@ -72,7 +72,7 @@ async function translateOne(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4.1-nano",
+      model: "gpt-4.1-mini",
       messages: [
         { role: "system", content: systemContent },
         { role: "user", content: text },
