@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import type { WebSocket } from "ws";
 import { DeepgramStream, type TranscriptEvent } from "./deepgram.js";
-import { translateToMany, clearContext } from "./translate.js";
+import { translateToMany, clearContext, setSessionDomain, clearSessionDomain } from "./translate.js";
 import {
   getSession,
   storeChunk,
@@ -32,6 +32,12 @@ export async function handleAudioWebSocket(
   if (!session) {
     ws.close(4001, "Session not found");
     return;
+  }
+
+  // Load domain config from session
+  if (session.domain) {
+    setSessionDomain(sessionId, session.domain, session.customGlossary);
+    console.log(`[ws] Domain: ${session.domain}`);
   }
 
   console.log(
@@ -113,6 +119,7 @@ export async function handleAudioWebSocket(
     console.log(`[ws] Speaker disconnected: session=${sessionId}`);
     dg.close();
     clearContext(sessionId);
+    clearSessionDomain(sessionId);
     await setSessionInactive(sessionId);
 
     // Notify listeners that session ended

@@ -11,6 +11,8 @@ export interface Session {
   active: boolean;
   sourceLanguage: string;
   targetLanguages: string[];
+  domain?: string;
+  customGlossary?: Record<string, Record<string, string>>;
 }
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL!;
@@ -27,7 +29,9 @@ async function redis(command: string, ...args: (string | number)[]) {
 
 export async function createSession(
   targetLanguages: string[],
-  sourceLanguage = "en"
+  sourceLanguage = "en",
+  domain?: string,
+  customGlossary?: Record<string, Record<string, string>>
 ): Promise<Session> {
   const id = Math.random().toString(36).slice(2, 8).toUpperCase();
   const session: Session = {
@@ -36,6 +40,8 @@ export async function createSession(
     active: true,
     sourceLanguage,
     targetLanguages,
+    domain,
+    customGlossary,
   };
   // Store session for 24 hours
   await redis("set", `session:${id}`, JSON.stringify(session));

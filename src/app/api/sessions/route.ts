@@ -5,14 +5,14 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { targetLanguages, sourceLanguage } = await req.json();
+    const { targetLanguages, sourceLanguage, domain, customGlossary } = await req.json();
 
     if (!targetLanguages || !Array.isArray(targetLanguages) || targetLanguages.length === 0) {
       return NextResponse.json({ error: "targetLanguages required" }, { status: 400 });
     }
 
     const src = sourceLanguage || "en";
-    const session = await createSession(targetLanguages, src);
+    const session = await createSession(targetLanguages, src, domain, customGlossary);
     const langsParam = targetLanguages.join(",");
 
     const rtUrl = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";

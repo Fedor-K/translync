@@ -5,10 +5,16 @@ import { useRouter } from "next/navigation";
 
 const POPULAR_LANGS = ["en", "es", "fr", "de", "ru", "zh", "ar", "pt", "it", "uk"];
 
+const DOMAINS = [
+  { id: "general", name: "General", icon: "🌐" },
+  { id: "ngo", name: "NGO / Humanitarian", icon: "🤝" },
+];
+
 export default function Dashboard() {
   const router = useRouter();
   const [selectedLangs, setSelectedLangs] = useState<string[]>(["es"]);
   const [sourceLang, setSourceLang] = useState("en");
+  const [domain, setDomain] = useState("general");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,7 +35,11 @@ export default function Dashboard() {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetLanguages: selectedLangs, sourceLanguage: sourceLang }),
+        body: JSON.stringify({
+          targetLanguages: selectedLangs,
+          sourceLanguage: sourceLang,
+          domain: domain !== "general" ? domain : undefined,
+        }),
       });
       const data = await res.json();
       if (data.organizerUrl) {
@@ -50,7 +60,32 @@ export default function Dashboard() {
         <div className="mb-6">
           <a href="/" className="text-blue-600 text-sm hover:underline">← Back</a>
           <h1 className="text-2xl font-bold text-gray-900 mt-2">Create a Translation Session</h1>
-          <p className="text-gray-500 text-sm mt-1">Select languages and start translating</p>
+          <p className="text-gray-500 text-sm mt-1">Select domain, languages and start translating</p>
+        </div>
+
+        {/* Domain selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Domain</label>
+          <div className="grid grid-cols-2 gap-2">
+            {DOMAINS.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => setDomain(d.id)}
+                className={`px-3 py-3 rounded-xl text-sm font-medium border-2 transition text-left ${
+                  domain === d.id
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:border-blue-300"
+                }`}
+              >
+                <span className="text-lg mr-1">{d.icon}</span> {d.name}
+              </button>
+            ))}
+          </div>
+          {domain === "ngo" && (
+            <p className="text-xs text-blue-600 mt-2">
+              Includes humanitarian terminology glossary (UNHCR, IASC, Sphere Standards)
+            </p>
+          )}
         </div>
 
         {/* Source language */}
@@ -93,7 +128,7 @@ export default function Dashboard() {
         {/* Cost estimate */}
         {selectedLangs.length > 0 && (
           <div className="bg-blue-50 rounded-xl px-4 py-3 mb-6 text-sm text-blue-700">
-            💰 Est. cost: <strong>${(selectedLangs.length * 3).toFixed(0)}/hour</strong>
+            Est. cost: <strong>${(selectedLangs.length * 3).toFixed(0)}/hour</strong>
             {" "}· {selectedLangs.length} language{selectedLangs.length > 1 ? "s" : ""}
           </div>
         )}
@@ -107,7 +142,7 @@ export default function Dashboard() {
           disabled={loading || selectedLangs.length === 0}
           className="w-full bg-blue-700 text-white font-semibold py-3 rounded-xl hover:bg-blue-800 transition disabled:opacity-50"
         >
-          {loading ? "Starting..." : "▶ Start Translation Session"}
+          {loading ? "Starting..." : "Start Translation Session"}
         </button>
 
         <p className="text-center text-gray-400 text-xs mt-4">

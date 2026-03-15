@@ -17,6 +17,8 @@ export interface Session {
   active: boolean;
   sourceLanguage: string;
   targetLanguages: string[];
+  domain?: string;
+  customGlossary?: Record<string, Record<string, string>>;
 }
 
 export interface TranscriptChunk {
