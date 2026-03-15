@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 
-// Lazy client — не инициализируем при импорте (Vercel build time)
 let _client: OpenAI | null = null;
 function getClient() {
   if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -55,7 +54,7 @@ export async function translateToMany(
         try {
           results[lang] = await translateText(text, lang, sourceLang);
         } catch {
-          results[lang] = text; // fallback to original
+          results[lang] = text;
         }
       })
   );

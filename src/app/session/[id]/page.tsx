@@ -1,19 +1,35 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { use } from "react";
+
+const RT_URL = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [status, setStatus] = useState<"idle" | "requesting" | "recording" | "ended">("idle");
   const [transcript, setTranscript] = useState<string[]>([]);
+  const [interimText, setInterimText] = useState("");
   const [error, setError] = useState("");
   const [sessionUrl, setSessionUrl] = useState("");
-  const [volume, setVolume] = useState(0); // 0–100
+  const [volume, setVolume] = useState(0);
+  const [connected, setConnected] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const sseRef = useRef<EventSource | null>(null);
+  const sseCleanupRef = useRef<(() => void) | null>(null);
+
+  // Parse URL params
+  const getParams = useCallback(() => {
+    const p = new URLSearchParams(window.location.search);
+    return {
+      src: p.get("src") || "en",
+      langs: p.get("langs") || "",
+    };
+  }, []);
 
   useEffect(() => {
     const search = window.location.search;
@@ -51,72 +67,106 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     setVolume(0);
   };
 
-  const requestMic = async () => {
-    setError("");
-    setStatus("requesting");
-    await startRecording();
-  };
+  // Connect SSE to receive own transcript back (interim + final)
+  const lastTsRef = useRef(0);
+  const connectSSE = useCallback(() => {
+    const { src } = getParams();
+    let closed = false;
 
-  const streamRef = useRef<MediaStream | null>(null);
-  const isRecordingRef = useRef(false);
+    function connect() {
+      if (closed) return;
+      const url = `${RT_URL}/session/${id}/stream?lang=${src}&since=${lastTsRef.current}`;
+      const sse = new EventSource(url);
+      sseRef.current = sse;
 
-  const sendChunk = async (blob: Blob, mimeType: string) => {
-    if (!blob.size) return;
-    try {
-      const search = window.location.search;
-      const res = await fetch(`/api/sessions/${id}/chunk${search}`, {
-        method: "POST",
-        headers: { "x-audio-type": mimeType },
-        body: blob,
+      sse.addEventListener("transcript", (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === "interim") {
+          setInterimText(data.text);
+        } else if (data.type === "final") {
+          setInterimText("");
+          lastTsRef.current = data.timestamp;
+          setTranscript((prev) => [...prev, data.text]);
+        } else if (data.type === "end") {
+          setStatus("ended");
+        }
       });
-      const data = await res.json();
-      if (data.transcript) {
-        setTranscript((prev) => [...prev, data.transcript]);
-      } else if (data.error) {
-        setTranscript((prev) => [...prev, `⚠️ ${data.error}`]);
-      }
-    } catch (e) {
-      setTranscript((prev) => [...prev, `⚠️ Network error: ${String(e)}`]);
+
+      sse.onerror = () => {
+        sse.close();
+        if (!closed) setTimeout(connect, 2000);
+      };
     }
-  };
 
-  const recordOneCycle = (stream: MediaStream, mimeType: string) => {
-    if (!isRecordingRef.current) return;
-    const chunks: Blob[] = [];
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    mediaRef.current = recorder;
+    connect();
+    return () => { closed = true; sseRef.current?.close(); };
+  }, [id, getParams]);
 
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
+  // Connect WebSocket for audio streaming
+  const connectWS = useCallback(() => {
+    const { src, langs } = getParams();
+    const wsUrl = `${RT_URL.replace(/^http/, "ws")}/session/${id}/audio?src=${src}&langs=${langs}`;
+    const ws = new WebSocket(wsUrl);
+    ws.binaryType = "arraybuffer";
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnected(true);
+      console.log("[ws] Connected to RT server");
     };
 
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
-      sendChunk(blob, mimeType || "audio/webm");
-      // Start next cycle
-      if (isRecordingRef.current) {
-        setTimeout(() => recordOneCycle(stream, mimeType), 100);
-      }
+    ws.onclose = () => {
+      setConnected(false);
+      console.log("[ws] Disconnected from RT server");
     };
 
-    recorder.start();
-    // Stop after 5 seconds → triggers onstop → sends → starts new cycle
-    setTimeout(() => {
-      if (recorder.state === "recording") recorder.stop();
-    }, 5000);
-  };
+    ws.onerror = (err) => {
+      console.error("[ws] Error:", err);
+      setConnected(false);
+    };
+
+    return ws;
+  }, [id, getParams]);
 
   const startRecording = async () => {
+    setError("");
+    setStatus("requesting");
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mimeType = getMimeType();
 
+      // Connect WebSocket to RT server
+      const ws = connectWS();
+
+      // Wait for WS to open before starting recording
+      await new Promise<void>((resolve, reject) => {
+        ws.onopen = () => {
+          setConnected(true);
+          resolve();
+        };
+        ws.onerror = () => reject(new Error("Failed to connect to translation server"));
+        setTimeout(() => reject(new Error("Connection timeout")), 10000);
+      });
+
+      // Connect SSE to receive transcripts
+      sseCleanupRef.current = connectSSE();
+
       startVolumeMonitor(stream);
-      isRecordingRef.current = true;
       setStatus("recording");
 
-      recordOneCycle(stream, mimeType);
+      // Stream audio via MediaRecorder with 200ms timeslice
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+          e.data.arrayBuffer().then((buf) => ws.send(buf));
+        }
+      };
+
+      recorder.start(200); // 200ms chunks — key for low latency
     } catch (e: unknown) {
       const err = e as Error;
       setStatus("idle");
@@ -125,19 +175,31 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       } else if (err?.name === "NotFoundError") {
         setError("No microphone found on this device.");
       } else {
-        setError("Could not access microphone.");
+        setError(err?.message || "Could not start recording.");
       }
     }
   };
 
   const stopRecording = () => {
-    isRecordingRef.current = false;
     if (mediaRef.current?.state === "recording") mediaRef.current.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    wsRef.current?.close();
+    sseCleanupRef.current?.(); // sets closed=true, prevents SSE reconnect
+    sseCleanupRef.current = null;
     stopVolumeMonitor();
     setStatus("ended");
+    setConnected(false);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close();
+      sseCleanupRef.current?.();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      stopVolumeMonitor();
+    };
+  }, []);
 
   const listenUrl = sessionUrl || `https://translync.com/listen/${id}`;
 
@@ -156,12 +218,19 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <span className="font-bold text-lg">Translync</span>
           <span className="ml-3 text-blue-300 text-sm">Session #{id}</span>
         </div>
-        {status === "recording" && (
-          <span className="flex items-center gap-2 text-green-400 text-sm font-medium">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            LIVE
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {connected && (
+            <span className="text-xs text-green-300 bg-green-900/30 px-2 py-0.5 rounded">
+              WS
+            </span>
+          )}
+          {status === "recording" && (
+            <span className="flex items-center gap-2 text-green-400 text-sm font-medium">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              LIVE
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -190,26 +259,25 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             <>
               <p className="text-gray-500 mb-4">Press Start — browser will ask for microphone access</p>
               <button
-                onClick={requestMic}
+                onClick={startRecording}
                 className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-2xl text-lg transition"
               >
-                🎙️ Start Translation
+                Start Translation
               </button>
               {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             </>
           )}
           {status === "requesting" && (
             <>
-              <div className="text-4xl mb-3 animate-pulse">⏳</div>
-              <p className="text-blue-600 font-semibold">Allow microphone access in the popup...</p>
+              <div className="text-4xl mb-3 animate-pulse">...</div>
+              <p className="text-blue-600 font-semibold">Connecting...</p>
             </>
           )}
           {error === "blocked" && (
             <div className="text-left">
-              <div className="text-3xl mb-3 text-center">🔒</div>
               <p className="font-bold text-gray-900 text-center mb-4">Microphone access blocked</p>
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-4">
-                <p className="font-semibold mb-2">📱 On iPhone / Safari:</p>
+                <p className="font-semibold mb-2">On iPhone / Safari:</p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>Open <strong>Settings</strong> app</li>
                   <li>Scroll to <strong>Safari</strong></li>
@@ -219,8 +287,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 </ol>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-900 mb-4">
-                <p className="font-semibold mb-2">💻 On Chrome/Desktop:</p>
-                <p>Click the 🔒 lock icon in address bar → Microphone → Allow</p>
+                <p className="font-semibold mb-2">On Chrome/Desktop:</p>
+                <p>Click the lock icon in address bar → Microphone → Allow</p>
               </div>
               <button
                 onClick={() => { setError(""); setStatus("idle"); }}
@@ -232,7 +300,6 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           )}
           {status === "recording" && (
             <>
-              {/* Mic icon + volume bars */}
               <div className="flex items-center justify-center gap-4 mb-4">
                 <div className="text-4xl">🎙️</div>
                 <div className="flex items-end gap-1 h-10">
@@ -254,13 +321,12 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 onClick={stopRecording}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition"
               >
-                ⏹ Stop Session
+                Stop Session
               </button>
             </>
           )}
           {status === "ended" && (
             <div className="text-gray-500">
-              <div className="text-4xl mb-3">✅</div>
               <p className="font-semibold">Session ended</p>
               <p className="text-sm mt-1">Total segments: {transcript.length}</p>
             </div>
@@ -268,7 +334,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         </div>
 
         {/* Live Transcript */}
-        {transcript.length > 0 && (
+        {(transcript.length > 0 || interimText) && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <h2 className="font-bold text-gray-900 mb-3">Live Transcript</h2>
             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -277,6 +343,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   {t}
                 </p>
               ))}
+              {interimText && (
+                <p className="text-gray-400 text-sm py-2 italic">
+                  {interimText}
+                </p>
+              )}
             </div>
           </div>
         )}

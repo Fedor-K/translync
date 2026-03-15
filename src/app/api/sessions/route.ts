@@ -15,8 +15,11 @@ export async function POST(req: NextRequest) {
     const session = await createSession(targetLanguages, src);
     const langsParam = targetLanguages.join(",");
 
+    const rtUrl = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
+
     return NextResponse.json({
       sessionId: session.id,
+      rtUrl,
       listenUrl: `/listen/${session.id}?src=${src}&langs=${langsParam}`,
       organizerUrl: `/session/${session.id}?src=${src}&langs=${langsParam}`,
     });

@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { use } from "react";
+
+const RT_URL = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English", es: "Español", fr: "Français", de: "Deutsch",
@@ -29,53 +31,104 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [lang, setLang] = useState("");
   const [targetLangs, setTargetLangs] = useState<string[]>([]);
   const [chunks, setChunks] = useState<Chunk[]>([]);
+  const [interimText, setInterimText] = useState("");
   const [active, setActive] = useState(true);
   const [started, setStarted] = useState(false);
-  const [lastTs, setLastTs] = useState(0);
+  const [connected, setConnected] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sseRef = useRef<EventSource | null>(null);
+  const lastTsRef = useRef(0);
 
-  const speak = (text: string, langCode: string) => {
+  const speak = useCallback((text: string, langCode: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = LANG_BCP47[langCode] || langCode;
     utt.rate = 1.1;
     window.speechSynthesis.speak(utt);
-  };
+  }, [ttsEnabled]);
 
-  // Read languages from URL params (no API call needed)
+  // Read languages from URL params
   useEffect(() => {
-    const search = typeof window !== "undefined" ? window.location.search : "";
-    const p = new URLSearchParams(search);
+    const p = new URLSearchParams(window.location.search);
     const src = p.get("src") || "en";
     const langs = p.get("langs")?.split(",").filter(Boolean) || [];
     const all = [src, ...langs.filter((l) => l !== src)];
     setTargetLangs(all);
   }, [id]);
 
-  // Poll for new chunks
+  // Connect SSE when started — manual reconnect to update `since` param
   useEffect(() => {
     if (!started || !lang) return;
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/sessions/${id}/poll?since=${lastTs}&lang=${lang}`);
-        const data = await res.json();
-        if (data.chunks?.length > 0) {
-          setChunks((prev) => [...prev, ...data.chunks]);
-          setLastTs(data.chunks[data.chunks.length - 1].timestamp);
-          data.chunks.forEach((c: Chunk) => speak(c.text, lang));
+    let closed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    function connect() {
+      if (closed) return;
+      const since = lastTsRef.current;
+      const url = `${RT_URL}/session/${id}/stream?lang=${lang}&since=${since}`;
+      const sse = new EventSource(url);
+      sseRef.current = sse;
+
+      sse.addEventListener("connected", () => {
+        setConnected(true);
+      });
+
+      sse.addEventListener("transcript", (e) => {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "interim") {
+          setInterimText(data.text);
+        } else if (data.type === "final") {
+          setInterimText("");
+          const chunk: Chunk = {
+            id: data.chunkId,
+            timestamp: data.timestamp,
+            text: data.text,
+          };
+          setChunks((prev) => {
+            if (prev.some((c) => c.id === chunk.id)) return prev;
+            return [...prev, chunk];
+          });
+          lastTsRef.current = data.timestamp;
+          speak(data.text, lang);
+        } else if (data.type === "end") {
+          setActive(false);
         }
-        setActive(data.active !== false);
-      } catch {}
+      });
+
+      sse.onerror = () => {
+        setConnected(false);
+        sse.close();
+        // Reconnect after 2s with updated `since` to avoid duplicate history
+        if (!closed) {
+          reconnectTimer = setTimeout(connect, 2000);
+        }
+      };
+    }
+
+    connect();
+
+    return () => {
+      closed = true;
+      clearTimeout(reconnectTimer);
+      sseRef.current?.close();
+      sseRef.current = null;
+      setConnected(false);
     };
-    const timer = setInterval(poll, 1500);
-    return () => clearInterval(timer);
-  }, [started, lang, id, lastTs]);
+  }, [started, lang, id, speak]);
 
   // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chunks]);
+  }, [chunks, interimText]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      sseRef.current?.close();
+    };
+  }, []);
 
   if (!started) {
     return (
@@ -110,7 +163,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             onClick={() => setStarted(true)}
             className="w-full bg-blue-700 text-white font-bold py-3 rounded-xl disabled:opacity-40 hover:bg-blue-800 transition"
           >
-            Start Listening →
+            Start Listening
           </button>
         </div>
       </div>
@@ -125,8 +178,8 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           <span className="font-bold">Translync</span>
           {active ? (
             <span className="flex items-center gap-1 text-green-400 text-xs">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-              LIVE
+              <span className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-green-400 animate-pulse" : "bg-yellow-400"}`}></span>
+              {connected ? "LIVE" : "reconnecting..."}
             </span>
           ) : (
             <span className="text-gray-400 text-xs">ended</span>
@@ -146,7 +199,13 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             {ttsEnabled ? "🔊" : "🔇"}
           </button>
           <button
-            onClick={() => { setStarted(false); setChunks([]); setLastTs(0); }}
+            onClick={() => {
+              sseRef.current?.close();
+              setStarted(false);
+              setChunks([]);
+              setInterimText("");
+              lastTsRef.current = 0;
+            }}
             className="text-gray-400 text-sm hover:text-white"
           >
             {LANGUAGE_NAMES[lang] || lang} ↕
@@ -156,9 +215,9 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
 
       {/* Transcript */}
       <div className="flex-1 px-4 py-6 overflow-y-auto">
-        {chunks.length === 0 ? (
+        {chunks.length === 0 && !interimText ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <div className="text-4xl mb-3 animate-pulse">⏳</div>
+            <div className="text-4xl mb-3 animate-pulse">...</div>
             <p>Waiting for speaker...</p>
           </div>
         ) : (
@@ -168,6 +227,11 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-white leading-relaxed">{chunk.text}</p>
               </div>
             ))}
+            {interimText && (
+              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <p className="text-gray-400 leading-relaxed italic">{interimText}</p>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
         )}
@@ -175,7 +239,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
 
       {/* Footer */}
       <div className="bg-gray-800 px-4 py-2 text-center text-xs text-gray-500">
-        Powered by Translync · translync.com
+        Powered by Translync
       </div>
     </div>
   );
