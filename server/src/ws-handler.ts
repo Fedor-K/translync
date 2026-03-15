@@ -64,6 +64,7 @@ export async function handleAudioWebSocket(
     });
 
     // Publish each language to its Redis channel
+    // (translateToMany already includes sourceLang in results)
     for (const [lang, translatedText] of Object.entries(translations)) {
       await publishTranslation(sessionId, lang, {
         type: "final",
@@ -72,14 +73,6 @@ export async function handleAudioWebSocket(
         timestamp,
       });
     }
-
-    // Also publish original to source language channel
-    await publishTranslation(sessionId, sourceLang, {
-      type: "final",
-      chunkId,
-      text,
-      timestamp,
-    });
   }
 
   dg.on("transcript", (event: TranscriptEvent) => {

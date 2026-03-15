@@ -204,7 +204,8 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
               setStarted(false);
               setChunks([]);
               setInterimText("");
-              lastTsRef.current = 0;
+              // Don't reset lastTsRef — on new language, only get NEW chunks
+              // (prevents TTS from replaying all history)
             }}
             className="text-gray-400 text-sm hover:text-white"
           >
