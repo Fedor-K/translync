@@ -25,20 +25,6 @@ async function redis(command: string, ...args: (string | number)[]) {
   return data.result;
 }
 
-async function redisPost(command: string, key: string, body: unknown) {
-  const url = `${REDIS_URL}/${command}/${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${REDIS_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return data.result;
-}
-
 export async function createSession(
   targetLanguages: string[],
   sourceLanguage = "en"
@@ -52,7 +38,7 @@ export async function createSession(
     targetLanguages,
   };
   // Store session for 24 hours
-  await redisPost("set", `session:${id}`, JSON.stringify(session));
+  await redis("set", `session:${id}`, JSON.stringify(session));
   await redis("expire", `session:${id}`, 86400);
   return session;
 }
@@ -69,7 +55,7 @@ export async function getSession(id: string): Promise<Session | null> {
 
 export async function addChunk(sessionId: string, chunk: TranscriptChunk): Promise<void> {
   const key = `chunks:${sessionId.toUpperCase()}`;
-  await redisPost("rpush", key, JSON.stringify(chunk));
+  await redis("rpush", key, JSON.stringify(chunk));
   await redis("expire", key, 86400);
 }
 
@@ -90,5 +76,5 @@ export async function endSession(sessionId: string): Promise<void> {
   const session = await getSession(sessionId);
   if (!session) return;
   session.active = false;
-  await redisPost("set", `session:${sessionId.toUpperCase()}`, JSON.stringify(session));
+  await redis("set", `session:${sessionId.toUpperCase()}`, JSON.stringify(session));
 }

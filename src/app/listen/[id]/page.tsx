@@ -10,6 +10,14 @@ const LANGUAGE_NAMES: Record<string, string> = {
   uk: "Українська", ro: "Română", cs: "Čeština", hu: "Magyar",
 };
 
+const LANG_BCP47: Record<string, string> = {
+  en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE",
+  it: "it-IT", pt: "pt-PT", ru: "ru-RU", zh: "zh-CN",
+  ja: "ja-JP", ko: "ko-KR", ar: "ar-SA", hi: "hi-IN",
+  nl: "nl-NL", pl: "pl-PL", tr: "tr-TR", sv: "sv-SE",
+  uk: "uk-UA", ro: "ro-RO", cs: "cs-CZ", hu: "hu-HU",
+};
+
 interface Chunk {
   id: string;
   timestamp: number;
@@ -24,7 +32,16 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
   const [active, setActive] = useState(true);
   const [started, setStarted] = useState(false);
   const [lastTs, setLastTs] = useState(0);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const speak = (text: string, langCode: string) => {
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = LANG_BCP47[langCode] || langCode;
+    utt.rate = 1.1;
+    window.speechSynthesis.speak(utt);
+  };
 
   // Read languages from URL params (no API call needed)
   useEffect(() => {
@@ -46,6 +63,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
         if (data.chunks?.length > 0) {
           setChunks((prev) => [...prev, ...data.chunks]);
           setLastTs(data.chunks[data.chunks.length - 1].timestamp);
+          data.chunks.forEach((c: Chunk) => speak(c.text, lang));
         }
         setActive(data.active !== false);
       } catch {}
@@ -114,12 +132,26 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             <span className="text-gray-400 text-xs">ended</span>
           )}
         </div>
-        <button
-          onClick={() => { setStarted(false); setChunks([]); setLastTs(0); }}
-          className="text-gray-400 text-sm hover:text-white"
-        >
-          {LANGUAGE_NAMES[lang] || lang} ↕
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setTtsEnabled((v) => {
+                if (v) window.speechSynthesis?.cancel();
+                return !v;
+              });
+            }}
+            className="text-gray-400 text-sm hover:text-white"
+            title={ttsEnabled ? "Mute voice" : "Enable voice"}
+          >
+            {ttsEnabled ? "🔊" : "🔇"}
+          </button>
+          <button
+            onClick={() => { setStarted(false); setChunks([]); setLastTs(0); }}
+            className="text-gray-400 text-sm hover:text-white"
+          >
+            {LANGUAGE_NAMES[lang] || lang} ↕
+          </button>
+        </div>
       </div>
 
       {/* Transcript */}
