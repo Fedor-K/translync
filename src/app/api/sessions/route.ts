@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSession, redis } from "@/lib/sessions";
 import { cookies } from "next/headers";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +23,10 @@ export async function POST(req: NextRequest) {
 
     const rtUrl = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
 
-    // Get or create user ID from cookie
+    // Use auth session user ID, or fallback to cookie
+    const authSession = await auth();
     const cookieStore = await cookies();
-    let uid = cookieStore.get("translync_uid")?.value;
+    let uid = authSession?.user?.id || cookieStore.get("translync_uid")?.value;
     if (!uid) {
       uid = generateUid();
     }

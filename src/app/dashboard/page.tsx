@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { LANGUAGE_NAMES } from "@/lib/translate";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 /* ── Constants ────────────────────────────────────────────────── */
 
@@ -423,7 +424,11 @@ export default function Dashboard() {
     }
   };
 
-  const sessions = data?.sessions || [];
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email || "";
+  const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
+
+  const sessions_list = data?.sessions || [];
   const stats = data?.stats || { totalMinutes: 0, totalSessions: 0, languagesUsed: [] };
 
   return (
@@ -440,8 +445,15 @@ export default function Dashboard() {
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500 hidden sm:block">{userEmail}</span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
+              Sign out
+            </button>
             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-blue-700 font-semibold text-sm">U</span>
+              <span className="text-blue-700 font-semibold text-sm">{userInitial}</span>
             </div>
           </div>
         </div>
@@ -473,7 +485,7 @@ export default function Dashboard() {
                 <div>
                   <h2 className="font-bold text-gray-900">Your Streams</h2>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {sessions.length} session{sessions.length !== 1 ? "s" : ""} total
+                    {sessions_list.length} session{sessions_list.length !== 1 ? "s" : ""} total
                   </p>
                 </div>
                 <button
@@ -490,7 +502,7 @@ export default function Dashboard() {
                     <div className="animate-pulse text-lg mb-2">...</div>
                     <p className="text-sm">Loading sessions</p>
                   </div>
-                ) : sessions.length === 0 ? (
+                ) : sessions_list.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
                       <span className="text-blue-500 text-2xl font-bold">+</span>
@@ -508,7 +520,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {sessions.map((session) => (
+                    {sessions_list.map((session) => (
                       <SessionRow
                         key={session.id}
                         session={session}

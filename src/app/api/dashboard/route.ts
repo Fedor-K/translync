@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redis, getSession } from "@/lib/sessions";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,10 @@ interface SessionMeta {
 
 export async function GET(req: NextRequest) {
   try {
-    const uid = req.cookies.get("translync_uid")?.value;
+    const session = await auth();
+    const uid = session?.user?.id || req.cookies.get("translync_uid")?.value;
     if (!uid) {
-      return NextResponse.json({ sessions: [], stats: { totalMinutes: 0, languagesUsed: [] } });
+      return NextResponse.json({ sessions: [], stats: { totalMinutes: 0, totalSessions: 0, languagesUsed: [] } });
     }
 
     // Get all session metas for this user
@@ -83,9 +85,10 @@ export async function GET(req: NextRequest) {
 // DELETE a session from user's list
 export async function DELETE(req: NextRequest) {
   try {
-    const uid = req.cookies.get("translync_uid")?.value;
+    const session = await auth();
+    const uid = session?.user?.id || req.cookies.get("translync_uid")?.value;
     if (!uid) {
-      return NextResponse.json({ error: "No user ID" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const { sessionId } = await req.json();
