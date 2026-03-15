@@ -22,16 +22,49 @@ interface Chunk {
 class AudioQueue {
   private ctx: AudioContext;
   private nextStartTime = 0;
+  // Buffer incoming PCM bytes, play in ~200ms blocks (4800 samples at 24kHz)
+  private pendingBytes: Uint8Array[] = [];
+  private pendingLength = 0;
+  private readonly MIN_SAMPLES = 4800; // 200ms at 24kHz
 
   constructor() {
     this.ctx = new AudioContext({ sampleRate: 24000 });
   }
 
-  enqueue(pcm16: ArrayBuffer) {
-    // Ensure AudioContext is running (iOS Safari requires user gesture)
+  // Add raw PCM bytes to buffer, play when enough accumulated
+  addChunk(pcm16: ArrayBuffer) {
     if (this.ctx.state === "suspended") this.ctx.resume();
+    this.pendingBytes.push(new Uint8Array(pcm16));
+    this.pendingLength += pcm16.byteLength;
+    // Play when we have enough (2 bytes per sample)
+    if (this.pendingLength >= this.MIN_SAMPLES * 2) {
+      this.flushBuffer();
+    }
+  }
 
-    const int16 = new Int16Array(pcm16);
+  // Flush remaining buffer (called on audio_end)
+  flush() {
+    if (this.pendingLength > 0) {
+      this.flushBuffer();
+    }
+  }
+
+  private flushBuffer() {
+    // Merge all pending byte arrays
+    const merged = new Uint8Array(this.pendingLength);
+    let offset = 0;
+    for (const chunk of this.pendingBytes) {
+      merged.set(chunk, offset);
+      offset += chunk.length;
+    }
+    this.pendingBytes = [];
+    this.pendingLength = 0;
+
+    // Ensure even byte count (Int16 alignment)
+    const byteLen = merged.length & ~1;
+    if (byteLen === 0) return;
+
+    const int16 = new Int16Array(merged.buffer, merged.byteOffset, byteLen / 2);
     const float32 = new Float32Array(int16.length);
     for (let i = 0; i < int16.length; i++) {
       float32[i] = int16[i] / 32768;
@@ -44,7 +77,6 @@ class AudioQueue {
     source.buffer = buffer;
     source.connect(this.ctx.destination);
 
-    // Schedule precisely after previous chunk ends
     const now = this.ctx.currentTime;
     const startTime = Math.max(now, this.nextStartTime);
     source.start(startTime);
@@ -53,7 +85,8 @@ class AudioQueue {
 
   stop() {
     this.nextStartTime = 0;
-    // Create new context to stop all playing audio
+    this.pendingBytes = [];
+    this.pendingLength = 0;
     this.ctx.close();
     this.ctx = new AudioContext({ sampleRate: 24000 });
   }
@@ -114,7 +147,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
         // Binary frame = PCM audio data
         if (e.data instanceof ArrayBuffer) {
           if (ttsEnabled && audioQueueRef.current) {
-            audioQueueRef.current.enqueue(e.data);
+            audioQueueRef.current.addChunk(e.data);
           }
           return;
         }
@@ -142,6 +175,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
           pendingAudioChunkId = data.chunkId;
         } else if (data.type === "audio_end") {
           pendingAudioChunkId = null;
+          audioQueueRef.current?.flush();
         } else if (data.type === "end") {
           setActive(false);
         }
