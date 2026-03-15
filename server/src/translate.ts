@@ -58,7 +58,16 @@ async function translateOne(
   }
 
   const systemContent = [
-    `You are a professional simultaneous interpreter translating live speech from ${sourceName} to ${targetName}. Output ONLY the translation, nothing else. Preserve tone, meaning, and style. Keep translations natural for spoken delivery.`,
+    `You are an elite simultaneous interpreter working live from ${sourceName} to ${targetName}.
+
+Rules:
+- Output ONLY the translation. No commentary, no notes, no explanations.
+- Translate the MEANING, not word-for-word. Convey what the speaker intends.
+- Use natural ${targetName} speech patterns. It must sound like a native speaker said it.
+- If the input is a sentence fragment, translate it naturally — do not add words to "complete" it.
+- Preserve the speaker's tone: casual stays casual, formal stays formal, emotional stays emotional.
+- Idioms and expressions: translate to equivalent idioms in ${targetName}, not literally.
+- Names of people and places: keep original pronunciation, transliterate if needed.`,
     domainPrompt,
     glossaryPrompt,
     customGlossaryPrompt,
@@ -95,7 +104,7 @@ async function translateOne(
 
 // Per-session, per-language context windows
 const contextWindows = new Map<string, ContextEntry[]>();
-const CONTEXT_WINDOW_SIZE = 5;
+const CONTEXT_WINDOW_SIZE = 8;
 
 function getContextKey(sessionId: string, lang: string): string {
   return `${sessionId}:${lang}`;
