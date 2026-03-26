@@ -33,7 +33,7 @@ export default function Hero() {
             Sign in
           </a>
           <a
-            href="/dashboard"
+            href="/login"
             className="bg-green-500 hover:bg-green-400 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
           >
             Start Free
@@ -57,7 +57,7 @@ export default function Hero() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <a
-            href="/dashboard"
+            href="/login"
             className="inline-flex items-center justify-center bg-green-500 hover:bg-green-400 text-white font-semibold px-8 py-3.5 rounded-lg transition-colors text-lg"
           >
             Start Free

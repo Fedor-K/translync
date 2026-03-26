@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 interface SessionMeta {
   id: string;
+  name?: string;
   sourceLanguage: string;
   targetLanguages: string[];
   domain: string;
@@ -40,12 +41,12 @@ export async function GET(req: NextRequest) {
         const liveSession = await getSession(meta.id);
         return {
           id: meta.id,
+          name: meta.name || liveSession?.name || undefined,
           sourceLanguage: meta.sourceLanguage,
           targetLanguages: meta.targetLanguages,
           domain: meta.domain,
           createdAt: meta.createdAt,
           active: liveSession?.active ?? false,
-          // Session exists in Redis means it hasn't expired (24h TTL)
           exists: liveSession !== null,
         };
       })

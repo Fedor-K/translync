@@ -16,7 +16,7 @@ export default function CTA() {
         </p>
 
         <a
-          href="/dashboard"
+          href="/login"
           className="inline-flex items-center justify-center bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-lg transition-colors text-lg"
         >
           Start Free

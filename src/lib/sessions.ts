@@ -7,6 +7,7 @@ export interface TranscriptChunk {
 
 export interface Session {
   id: string;
+  name?: string;
   createdAt: number;
   active: boolean;
   sourceLanguage: string;
@@ -31,11 +32,13 @@ export async function createSession(
   targetLanguages: string[],
   sourceLanguage = "en",
   domain?: string,
-  customGlossary?: Record<string, Record<string, string>>
+  customGlossary?: Record<string, Record<string, string>>,
+  name?: string,
 ): Promise<Session> {
   const id = Math.random().toString(36).slice(2, 8).toUpperCase();
   const session: Session = {
     id,
+    name: name || undefined,
     createdAt: Date.now(),
     active: true,
     sourceLanguage,

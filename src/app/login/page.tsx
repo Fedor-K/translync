@@ -52,7 +52,7 @@ function LoginForm() {
             <span className="text-white font-bold text-lg">T</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900">Sign in to Translync</h1>
-          <p className="text-gray-500 text-sm mt-1">Enter your email to get a magic link</p>
+          <p className="text-gray-500 text-sm mt-1">Enter your email to sign in or create an account</p>
         </div>
 
         <form onSubmit={handleSubmit}>

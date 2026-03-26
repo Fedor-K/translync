@@ -17,6 +17,7 @@ const DOMAINS = [
 
 interface SessionInfo {
   id: string;
+  name?: string;
   sourceLanguage: string;
   targetLanguages: string[];
   domain: string;
@@ -129,6 +130,7 @@ function CreateSessionModal({
   onCreated: () => void;
 }) {
   const router = useRouter();
+  const [sessionName, setSessionName] = useState("");
   const [selectedLangs, setSelectedLangs] = useState<string[]>(["es"]);
   const [sourceLang, setSourceLang] = useState("en");
   const [domain, setDomain] = useState("general");
@@ -156,6 +158,7 @@ function CreateSessionModal({
           targetLanguages: selectedLangs,
           sourceLanguage: sourceLang,
           domain: domain !== "general" ? domain : undefined,
+          name: sessionName || undefined,
         }),
       });
       const data = await res.json();
@@ -189,6 +192,20 @@ function CreateSessionModal({
           >
             x
           </button>
+        </div>
+
+        {/* Session name */}
+        <div className="mb-5">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Session name</label>
+          <input
+            type="text"
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            placeholder="e.g. Sunday Service, Annual Conference"
+            maxLength={100}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">Optional — helps you identify this session later</p>
         </div>
 
         {/* Domain selection */}
@@ -328,7 +345,10 @@ function SessionRow({
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono font-bold text-gray-900 text-sm">#{session.id}</span>
+            {session.name && (
+              <span className="font-semibold text-gray-900 text-sm">{session.name}</span>
+            )}
+            <span className={`font-mono font-bold text-sm ${session.name ? "text-gray-400" : "text-gray-900"}`}>#{session.id}</span>
             {session.active && session.exists ? (
               <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -566,12 +586,12 @@ export default function Dashboard() {
               <div>
                 <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
                   <span>Free tier</span>
-                  <span>{stats.totalMinutes} / 120 min</span>
+                  <span>{stats.totalMinutes} / 30 min</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-400 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (stats.totalMinutes / 120) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (stats.totalMinutes / 30) * 100)}%` }}
                   />
                 </div>
               </div>

@@ -12,7 +12,7 @@ const plans = [
       "No credit card required",
     ],
     cta: "Start Free",
-    href: "/dashboard",
+    href: "/login",
     ctaStyle:
       "border-2 border-blue-600 text-blue-600 hover:bg-blue-50",
   },
@@ -31,7 +31,7 @@ const plans = [
       "Priority support",
     ],
     cta: "Start Free",
-    href: "/dashboard",
+    href: "/login",
     ctaStyle: "bg-green-500 text-white hover:bg-green-400",
   },
   {

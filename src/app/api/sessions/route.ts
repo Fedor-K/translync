@@ -11,14 +11,15 @@ function generateUid(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { targetLanguages, sourceLanguage, domain, customGlossary } = await req.json();
+    const { targetLanguages, sourceLanguage, domain, customGlossary, name } = await req.json();
 
     if (!targetLanguages || !Array.isArray(targetLanguages) || targetLanguages.length === 0) {
       return NextResponse.json({ error: "targetLanguages required" }, { status: 400 });
     }
 
     const src = sourceLanguage || "en";
-    const session = await createSession(targetLanguages, src, domain, customGlossary);
+    const sessionName = typeof name === "string" ? name.trim().slice(0, 100) : undefined;
+    const session = await createSession(targetLanguages, src, domain, customGlossary, sessionName);
     const langsParam = targetLanguages.join(",");
 
     const rtUrl = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
     // Store session association for this user (expire in 30 days)
     const sessionMeta = JSON.stringify({
       id: session.id,
+      name: sessionName || undefined,
       sourceLanguage: src,
       targetLanguages,
       domain: domain || "general",
