@@ -8,7 +8,7 @@ import {
   setSessionInactive,
 } from "./redis.js";
 
-const RTMP_BASE = process.env.RTMP_URL || "rtmp://localhost:1935";
+const RTMP_BASE = process.env.RTMP_URL || "rtmp://rtmp.translync.app/live";
 
 // Active RTMP ingest processes
 const activeIngests = new Map<string, { ffmpeg: ChildProcess; dg: DeepgramStream }>();
