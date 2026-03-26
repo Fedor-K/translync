@@ -3,6 +3,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { handleAudioWebSocket } from "./ws-handler.js";
 import { handleListenerWebSocket } from "./listener-handler.js";
 import { handleSSE } from "./sse-handler.js";
+import { startRtmpIngest, stopRtmpIngest } from "./rtmp-handler.js";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
@@ -38,6 +39,51 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
         res.end("Internal server error");
       }
     }
+    return;
+  }
+
+  // RTMP control endpoints
+  if (req.method === "POST" && url.pathname === "/rtmp/start") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", async () => {
+      try {
+        const { sessionId } = JSON.parse(body);
+        if (!sessionId) {
+          res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+          res.end(JSON.stringify({ error: "sessionId required" }));
+          return;
+        }
+        const result = await startRtmpIngest(sessionId.toUpperCase());
+        res.writeHead(result.ok ? 200 : 400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ error: String(err) }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/rtmp/stop") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", async () => {
+      try {
+        const { sessionId } = JSON.parse(body);
+        if (!sessionId) {
+          res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+          res.end(JSON.stringify({ error: "sessionId required" }));
+          return;
+        }
+        const result = await stopRtmpIngest(sessionId.toUpperCase());
+        res.writeHead(result.ok ? 200 : 400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ error: String(err) }));
+      }
+    });
     return;
   }
 

@@ -397,6 +397,58 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           )}
         </div>
 
+        {/* Stream via OBS */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="font-bold text-gray-900">Stream via OBS</h2>
+            <span className="bg-gray-100 text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">Alternative</span>
+          </div>
+          <p className="text-gray-500 text-sm mb-4">Use OBS Studio instead of browser microphone for professional audio</p>
+
+          <div className="space-y-3 mb-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">RTMP URL</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-700 font-mono border border-gray-100">
+                  rtmp://rtmp.translync.app/live
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText("rtmp://rtmp.translync.app/live")}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium px-3 py-2.5 rounded-xl transition"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Stream Key</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-900 font-mono font-bold border border-gray-100">
+                  {id}
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(id)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium px-3 py-2.5 rounded-xl transition"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
+            <p className="font-semibold mb-2">OBS Setup (3 steps):</p>
+            <ol className="list-decimal list-inside space-y-1.5 text-blue-700">
+              <li>Open OBS → Settings → Stream → Service: <strong>Custom</strong></li>
+              <li>Paste the RTMP URL as <strong>Server</strong> and the Stream Key above</li>
+              <li>Click <strong>Start Streaming</strong> in OBS — translation begins automatically</li>
+            </ol>
+            <p className="text-blue-500 text-xs mt-3">
+              Tip: For best results, use Audio Output Capture in OBS sources for clean audio without background noise.
+            </p>
+          </div>
+        </div>
+
         {/* Live Transcript */}
         {(transcript.length > 0 || interimText) && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
