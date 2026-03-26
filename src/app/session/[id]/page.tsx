@@ -300,13 +300,34 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm text-center">
           {status === "idle" && error !== "blocked" && (
             <>
-              <p className="text-gray-500 mb-4">Press Start — browser will ask for microphone access</p>
+              <div className="mb-6">
+                <h3 className="font-bold text-gray-900 text-lg mb-3">Ready to start</h3>
+                <ol className="text-sm text-gray-600 text-left space-y-2 max-w-xs mx-auto">
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <span>Share the QR code above with your audience</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <span>Click <strong>Start Translation</strong> below</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <span>Allow microphone access when your browser asks</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
+                    <span>Speak naturally — translations appear live for your audience</span>
+                  </li>
+                </ol>
+              </div>
               <button
                 onClick={startRecording}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-2xl text-lg transition"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold px-10 py-4 rounded-2xl text-lg transition shadow-lg shadow-green-500/25"
               >
                 Start Translation
               </button>
+              <p className="text-gray-400 text-xs mt-3">Your browser will ask for microphone permission</p>
               {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             </>
           )}

@@ -6,6 +6,7 @@ import { Suspense } from "react";
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const checkEmail = searchParams.get("check") === "1";
@@ -18,14 +19,21 @@ function LoginForm() {
 
     try {
       const { signIn } = await import("next-auth/react");
-      await signIn("resend", { email, callbackUrl: "/dashboard" });
+      const result = await signIn("resend", { email, callbackUrl: "/dashboard", redirect: false });
+      if (result?.error) {
+        setError("Could not send magic link. Please try again.");
+        setLoading(false);
+      } else {
+        setSent(true);
+        setLoading(false);
+      }
     } catch (err) {
       setError("Something went wrong. Try again.");
       setLoading(false);
     }
   };
 
-  if (checkEmail) {
+  if (sent || checkEmail) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center">
@@ -33,12 +41,21 @@ function LoginForm() {
             <span className="text-green-600 text-2xl">✓</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Check your email</h1>
-          <p className="text-gray-500 text-sm mb-6">
-            We sent you a magic link. Click it to sign in.
+          <p className="text-gray-500 text-sm mb-2">
+            We sent a magic link to{email ? <span className="font-semibold text-gray-700"> {email}</span> : " your email"}.
           </p>
-          <p className="text-gray-400 text-xs">
+          <p className="text-gray-500 text-sm mb-6">
+            Click the link in the email to sign in.
+          </p>
+          <p className="text-gray-400 text-xs mb-4">
             Link expires in 10 minutes. Check spam if not found.
           </p>
+          <button
+            onClick={() => { setSent(false); setError(""); }}
+            className="text-blue-600 text-sm hover:underline"
+          >
+            Use a different email
+          </button>
         </div>
       </div>
     );
