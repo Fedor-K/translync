@@ -24,7 +24,7 @@ const config: NextAuthConfig = {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Translync <onboarding@resend.dev>",
+            from: "Translync <noreply@translync.app>",
             to: email,
             subject: "Sign in to Translync",
             html: `
