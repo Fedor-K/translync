@@ -95,6 +95,7 @@ export async function startRtmpIngest(
   console.log(`[rtmp] Starting ffmpeg: ${rtmpUrl}`);
 
   const ffmpeg = spawn("ffmpeg", [
+    "-4",
     "-i", rtmpUrl,
     "-f", "s16le",
     "-ar", "16000",
