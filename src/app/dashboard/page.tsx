@@ -11,6 +11,9 @@ const POPULAR_LANGS = ["en", "es", "fr", "de", "ru", "zh", "ar", "pt", "it", "uk
 const DOMAINS = [
   { id: "general", name: "General", icon: "G" },
   { id: "ngo", name: "NGO / Humanitarian", icon: "H" },
+  { id: "churches", name: "Churches", icon: "C" },
+  { id: "universities", name: "Universities", icon: "U" },
+  { id: "communities", name: "Communities", icon: "I" },
 ];
 
 /* ── Types ────────────────────────────────────────────────────── */

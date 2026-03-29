@@ -1,4 +1,4 @@
-import { getDomain, buildGlossaryPrompt, type DomainConfig } from "./domains.js";
+import { getDomain, buildFullGlossaryPrompt, buildGlossaryPrompt, type DomainConfig } from "./domains.js";
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English", es: "Spanish", fr: "French", de: "German",
@@ -15,41 +15,34 @@ export interface ContextEntry {
 
 let openaiKey: string | undefined;
 
-async function translateOne(
-  text: string,
+// Cached system prompts per session+lang (built once at session start, reused)
+const systemPromptCache = new Map<string, string>();
+
+function getSystemPromptCacheKey(sessionId: string, lang: string): string {
+  return `${sessionId}:${lang}`;
+}
+
+function buildSystemPrompt(
   sourceLang: string,
   targetLang: string,
-  context: ContextEntry[] = [],
   domain?: DomainConfig,
-  customGlossary?: Record<string, Record<string, string>>
-): Promise<string> {
-  openaiKey ??= process.env.OPENAI_API_KEY;
-  if (!openaiKey) throw new Error("OPENAI_API_KEY not set");
-
+  customGlossary?: Record<string, Record<string, string>>,
+): string {
   const sourceName = LANGUAGE_NAMES[sourceLang] || sourceLang;
   const targetName = LANGUAGE_NAMES[targetLang] || targetLang;
 
-  // Build context block
-  let contextBlock = "";
-  if (context.length > 0) {
-    contextBlock = "\n\nPrevious context (already translated, do NOT re-translate):\n" +
-      context.map((c, i) => `[${i + 1}] "${c.original}" → "${c.translation}"`).join("\n") +
-      "\n";
-  }
-
-  // Build domain prompt + glossary (pre-filtered to matching terms only)
   const domainPrompt = domain?.systemPrompt || "";
-  const glossaryPrompt = domain ? buildGlossaryPrompt(domain, targetLang, text) : "";
+  // Use full glossary (all terms for this language, not filtered per-request)
+  const glossaryPrompt = domain ? buildFullGlossaryPrompt(domain, targetLang) : "";
 
-  // Build custom glossary prompt (pre-filtered)
+  // Build custom glossary prompt (all terms for this language)
   let customGlossaryPrompt = "";
   if (customGlossary) {
-    const textLower = text.toLowerCase();
     const entries: string[] = [];
     for (const [term, translations] of Object.entries(customGlossary)) {
       const t = translations[targetLang];
-      if (t && textLower.includes(term.toLowerCase())) {
-        entries.push(`"${term}" → "${t}"`);
+      if (t) {
+        entries.push(`Always translate "${term}" as "${t}"`);
       }
     }
     if (entries.length > 0) {
@@ -57,7 +50,7 @@ async function translateOne(
     }
   }
 
-  const systemContent = [
+  return [
     `You are an elite simultaneous interpreter working live from ${sourceName} to ${targetName}.
 
 Rules:
@@ -71,8 +64,51 @@ Rules:
     domainPrompt,
     glossaryPrompt,
     customGlossaryPrompt,
-    contextBlock,
   ].filter(Boolean).join("\n");
+}
+
+function getCachedSystemPrompt(
+  sessionId: string,
+  sourceLang: string,
+  targetLang: string,
+  domain?: DomainConfig,
+  customGlossary?: Record<string, Record<string, string>>,
+): string {
+  const cacheKey = getSystemPromptCacheKey(sessionId, targetLang);
+  let cached = systemPromptCache.get(cacheKey);
+  if (!cached) {
+    cached = buildSystemPrompt(sourceLang, targetLang, domain, customGlossary);
+    systemPromptCache.set(cacheKey, cached);
+  }
+  return cached;
+}
+
+async function translateOne(
+  text: string,
+  sourceLang: string,
+  targetLang: string,
+  context: ContextEntry[] = [],
+  domain?: DomainConfig,
+  customGlossary?: Record<string, Record<string, string>>,
+  sessionId?: string,
+): Promise<string> {
+  openaiKey ??= process.env.OPENAI_API_KEY;
+  if (!openaiKey) throw new Error("OPENAI_API_KEY not set");
+
+  // Get or build cached system prompt (glossary injected once at session level)
+  const systemContent = sessionId
+    ? getCachedSystemPrompt(sessionId, sourceLang, targetLang, domain, customGlossary)
+    : buildSystemPrompt(sourceLang, targetLang, domain, customGlossary);
+
+  // Build context block (changes per request)
+  let contextBlock = "";
+  if (context.length > 0) {
+    contextBlock = "\n\nPrevious context (already translated, do NOT re-translate):\n" +
+      context.map((c, i) => `[${i + 1}] "${c.original}" → "${c.translation}"`).join("\n") +
+      "\n";
+  }
+
+  const fullSystem = contextBlock ? systemContent + contextBlock : systemContent;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -83,7 +119,7 @@ Rules:
     body: JSON.stringify({
       model: "gpt-4.1-mini",
       messages: [
-        { role: "system", content: systemContent },
+        { role: "system", content: fullSystem },
         { role: "user", content: text },
       ],
       max_tokens: 500,
@@ -138,6 +174,12 @@ export function clearContext(sessionId: string): void {
       contextWindows.delete(key);
     }
   }
+  // Also clear cached system prompts for this session
+  for (const key of systemPromptCache.keys()) {
+    if (key.startsWith(`${sessionId}:`)) {
+      systemPromptCache.delete(key);
+    }
+  }
 }
 
 // Per-session domain + custom glossary storage
@@ -180,7 +222,8 @@ export async function translateToMany(
             lang,
             ctx,
             sessionConfig?.domain,
-            sessionConfig?.customGlossary
+            sessionConfig?.customGlossary,
+            sessionId,
           );
           results[lang] = translation;
 
