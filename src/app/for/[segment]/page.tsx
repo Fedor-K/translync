@@ -10,6 +10,7 @@ import SegmentSocialProof from "@/components/SegmentSocialProof";
 import SegmentTestimonial from "@/components/SegmentTestimonial";
 import SegmentFAQ from "@/components/SegmentFAQ";
 import SegmentCTA from "@/components/SegmentCTA";
+import SegmentGlossary from "@/components/SegmentGlossary";
 
 interface Props {
   params: Promise<{ segment: string }>;
@@ -40,6 +41,7 @@ export default async function SegmentPage({ params }: Props) {
       <SegmentSocialProof orgs={data.socialProof} />
       <HowItWorks />
       <Features />
+      <SegmentGlossary glossary={data.glossaryFeature} />
       <SegmentTestimonial testimonial={data.testimonial} />
       <Pricing />
       <SegmentFAQ faqs={data.faq} />

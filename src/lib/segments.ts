@@ -18,6 +18,11 @@ export interface SegmentContent {
     subheading: string;
     button: string;
   };
+  glossaryFeature: {
+    headline: string;
+    description: string;
+    terms: string[];
+  };
   meta: {
     title: string;
     description: string;
@@ -75,6 +80,11 @@ export const SEGMENTS: Record<string, SegmentContent> = {
       subheading:
         "Start translating your services today. 30 free minutes, no credit card.",
       button: "Start Free for Your Church",
+    },
+    glossaryFeature: {
+      headline: "Church-Optimized AI",
+      description: "Trained on biblical and liturgical terminology in 19 languages. Sermon, communion, baptism, grace — every term translated with theological precision, not generic dictionary results.",
+      terms: ["Sermon", "Communion", "Baptism", "Grace", "Salvation", "Congregation", "Holy Spirit", "Gospel", "Worship", "Blessing"],
     },
     meta: {
       title: "Translync for Churches — Real-Time AI Sermon Translation",
@@ -134,6 +144,11 @@ export const SEGMENTS: Record<string, SegmentContent> = {
         "Start translating your events today. 30 free minutes, no setup required.",
       button: "Start Free for Your Organization",
     },
+    glossaryFeature: {
+      headline: "Humanitarian-Sector AI",
+      description: "Built-in glossary with 200+ IASC, UNHCR, and Sphere Standards terms in 19 languages. Refugee, IDP, gender-based violence, food security — translated with sector precision.",
+      terms: ["Refugee", "Asylum Seeker", "IDP", "Protection", "Accountability", "Resilience", "Livelihoods", "Cash Transfer", "GBV", "WASH"],
+    },
     meta: {
       title: "Translync for NGOs — AI Translation for Humanitarian Events",
       description:
@@ -192,6 +207,11 @@ export const SEGMENTS: Record<string, SegmentContent> = {
         "Start translating lectures and events. 30 free minutes, no IT setup needed.",
       button: "Start Free for Your University",
     },
+    glossaryFeature: {
+      headline: "Academic-Grade AI",
+      description: "Built-in academic glossary with precise terminology for lectures, research, and campus life in 19 languages. Dissertation, syllabus, tenure — translated the way academics expect.",
+      terms: ["Lecture", "Seminar", "Dissertation", "Thesis", "Syllabus", "Faculty", "Scholarship", "Peer Review", "Accreditation", "Tenure"],
+    },
     meta: {
       title: "Translync for Universities — AI Lecture Translation",
       description:
@@ -249,6 +269,11 @@ export const SEGMENTS: Record<string, SegmentContent> = {
       subheading:
         "Start translating your community events. 30 free minutes, no barriers.",
       button: "Start Free for Your Community",
+    },
+    glossaryFeature: {
+      headline: "Community-Focused AI",
+      description: "Built-in glossary for civic, legal, and social service terms in 19 languages. Residency, naturalization, health insurance, legal aid — translated accurately so nothing gets lost.",
+      terms: ["Residency", "Naturalization", "Work Permit", "Social Services", "Health Insurance", "Legal Aid", "Citizenship", "Family Reunification", "Housing", "Childcare"],
     },
     meta: {
       title: "Translync for Communities — AI Translation for Local Events",
