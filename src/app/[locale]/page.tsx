@@ -50,7 +50,7 @@ export default async function LocalizedHomePage({ params }: Props) {
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
         </div>
 
-        <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+        <nav className="relative z-20 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
           <a href={`/${locale}`} className="text-2xl font-bold tracking-tight">Translync</a>
           <div className="hidden md:flex items-center gap-8 text-sm text-blue-200">
             <a href="#how-it-works" className="hover:text-white transition-colors">{t.nav.howItWorks}</a>

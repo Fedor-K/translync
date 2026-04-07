@@ -48,7 +48,7 @@ export default function LanguageSwitcher({ current = "en" }: { current?: string 
         <>
           {/* Backdrop to prevent interaction with content below */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 min-w-[150px]">
+          <div className="absolute right-0 top-full mt-1 rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 min-w-[150px]" style={{ backgroundColor: "#ffffff" }}>
             {LANGUAGES.map((lang) => (
               <a
                 key={lang.code}

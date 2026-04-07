@@ -10,7 +10,7 @@ export default function SegmentHero({
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
       </div>
 
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+      <nav className="relative z-20 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
         <a href="/" className="flex items-center gap-2">
           <span className="text-2xl font-bold tracking-tight">Translync</span>
         </a>

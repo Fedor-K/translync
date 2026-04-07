@@ -10,7 +10,7 @@ export default function Hero() {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+      <nav className="relative z-20 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold tracking-tight">Translync</span>
         </div>
