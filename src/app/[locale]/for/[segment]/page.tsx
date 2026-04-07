@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import HowItWorks from "@/components/HowItWorks";
 import Features from "@/components/Features";
 import Pricing from "@/components/Pricing";
-import Footer from "@/components/Footer";
+import LocalizedFooter from "@/components/LocalizedFooter";
 import SegmentHero from "@/components/SegmentHero";
 import SegmentSocialProof from "@/components/SegmentSocialProof";
 import SegmentTestimonial from "@/components/SegmentTestimonial";
@@ -71,7 +71,7 @@ export default async function LocalizedSegmentPage({ params }: Props) {
       <Pricing />
       <SegmentFAQ faqs={data.faq} />
       <SegmentCTA cta={data.cta} />
-      <Footer />
+      <LocalizedFooter t={TRANSLATIONS[locale as keyof typeof TRANSLATIONS].footer} locale={locale} />
     </main>
   );
 }

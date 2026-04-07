@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { TRANSLATIONS, LOCALES, RTL_LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n";
 import type { Metadata } from "next";
-import Footer from "@/components/Footer";
+import LocalizedFooter from "@/components/LocalizedFooter";
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -207,7 +207,7 @@ export default async function LocalizedHomePage({ params }: Props) {
         </div>
       </section>
 
-      <Footer />
+      <LocalizedFooter t={t.footer} locale={locale} />
     </div>
   );
 }
