@@ -54,8 +54,16 @@ export default async function BlogPage() {
               <a
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="block bg-white rounded-2xl border border-gray-100 p-6 hover:border-blue-200 hover:shadow-md transition-all"
+                className="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-blue-200 hover:shadow-md transition-all"
               >
+                {post.coverImage && (
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+                <div className="p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full">
                     {CATEGORY_LABELS[post.category] || post.category}
@@ -81,6 +89,7 @@ export default async function BlogPage() {
                       #{kw.replace(/\s+/g, "-")}
                     </span>
                   ))}
+                </div>
                 </div>
               </a>
             ))}

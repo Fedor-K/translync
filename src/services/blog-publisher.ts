@@ -8,11 +8,27 @@ export async function publishPost(post: BlogPost): Promise<void> {
   // Store the post
   await redis("set", `${POST_KEY_PREFIX}${post.slug}`, JSON.stringify(post));
 
-  // Add to index (sorted list for listing page)
+  // Remove old index entry for this slug (if republishing)
+  const existing = await redis("lrange", POSTS_INDEX_KEY, 0, -1);
+  if (Array.isArray(existing)) {
+    for (const raw of existing) {
+      try {
+        const entry = JSON.parse(raw);
+        if (entry.slug === post.slug) {
+          await redis("lrem", POSTS_INDEX_KEY, 0, raw);
+        }
+      } catch {
+        // skip malformed
+      }
+    }
+  }
+
+  // Add to index
   const indexEntry = JSON.stringify({
     slug: post.slug,
     title: post.title,
     excerpt: post.excerpt,
+    coverImage: post.coverImage,
     category: post.category,
     segment: post.segment,
     readingTime: post.readingTime,
@@ -36,6 +52,7 @@ export interface PostSummary {
   slug: string;
   title: string;
   excerpt: string;
+  coverImage?: string;
   category: string;
   segment?: string;
   readingTime: number;
