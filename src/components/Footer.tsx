@@ -13,7 +13,7 @@ export default function Footer() {
           </div>
 
           {/* Links */}
-          <div className="flex gap-16">
+          <div className="flex flex-wrap gap-12 sm:gap-16">
             <div>
               <h4 className="text-white text-sm font-semibold mb-3">Product</h4>
               <ul className="space-y-2 text-sm">
@@ -30,6 +30,31 @@ export default function Footer() {
                 <li>
                   <a href="#faq" className="hover:text-white transition-colors">
                     FAQ
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white text-sm font-semibold mb-3">Solutions</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="/for/churches" className="hover:text-white transition-colors">
+                    For Churches
+                  </a>
+                </li>
+                <li>
+                  <a href="/for/ngos" className="hover:text-white transition-colors">
+                    For NGOs
+                  </a>
+                </li>
+                <li>
+                  <a href="/for/universities" className="hover:text-white transition-colors">
+                    For Universities
+                  </a>
+                </li>
+                <li>
+                  <a href="/for/communities" className="hover:text-white transition-colors">
+                    For Communities
                   </a>
                 </li>
               </ul>
