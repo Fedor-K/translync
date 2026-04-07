@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
     // Process content (extract ToC, FAQ, reading time, etc.)
     const post = processContent(title, content, keywords, category, segment);
 
-    // Override meta/excerpt if provided
+    // Override meta/excerpt/cover if provided
     if (metaDescription) post.metaDescription = metaDescription;
     if (excerpt) post.excerpt = excerpt;
+    if (body.coverImage) post.coverImage = body.coverImage;
 
     // Publish to Redis
     await publishPost(post);

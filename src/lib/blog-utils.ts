@@ -86,6 +86,7 @@ export interface BlogPost {
   toc: TocEntry[];
   faq: FaqEntry[];
   readingTime: number;
+  coverImage?: string;
   publishedAt: string;
   status: "draft" | "published";
 }

@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: post.publishedAt,
       url: `https://translync.app/blog/${post.slug}`,
+      ...(post.coverImage && { images: [{ url: post.coverImage, width: 1792, height: 1024, alt: post.title }] }),
     },
     alternates: {
       canonical: `https://translync.app/blog/${post.slug}`,
@@ -107,6 +108,17 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </header>
+
+      {/* Cover Image */}
+      {post.coverImage && (
+        <div className="max-w-4xl mx-auto px-6 pt-8">
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            className="w-full h-auto rounded-2xl shadow-lg"
+          />
+        </div>
+      )}
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         {/* Meta */}
