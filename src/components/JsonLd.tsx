@@ -4,13 +4,13 @@ export default function JsonLd() {
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        "@id": "https://translync.com/#software",
+        "@id": "https://translync.app/#software",
         name: "Translync",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         description:
           "Real-time AI translation for events, churches, NGOs, and conferences. 70+ languages, no hardware required.",
-        url: "https://translync.com",
+        url: "https://translync.app",
         offers: {
           "@type": "Offer",
           price: "3.00",
@@ -33,27 +33,23 @@ export default function JsonLd() {
       },
       {
         "@type": "Organization",
-        "@id": "https://translync.com/#org",
+        "@id": "https://translync.app/#org",
         name: "Translync",
-        url: "https://translync.com",
+        url: "https://translync.app",
+        logo: "https://translync.app/icon.svg",
         description: "AI-powered real-time translation for events and organizations",
         contactPoint: {
           "@type": "ContactPoint",
-          email: "hello@translync.com",
+          email: "hello@translync.app",
           contactType: "customer support",
         },
       },
       {
         "@type": "WebSite",
-        "@id": "https://translync.com/#website",
-        url: "https://translync.com",
+        "@id": "https://translync.app/#website",
+        url: "https://translync.app",
         name: "Translync",
-        publisher: { "@id": "https://translync.com/#org" },
-        potentialAction: {
-          "@type": "SearchAction",
-          target: "https://translync.com/?q={search_term_string}",
-          "query-input": "required name=search_term_string",
-        },
+        publisher: { "@id": "https://translync.app/#org" },
       },
     ],
   };

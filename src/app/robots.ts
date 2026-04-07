@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/session/", "/listen/", "/api/"],
     },
-    sitemap: "https://translync.com/sitemap.xml",
+    sitemap: "https://translync.app/sitemap.xml",
   };
 }

@@ -49,7 +49,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <a
-                    href="mailto:hello@translync.com"
+                    href="mailto:hello@translync.app"
                     className="hover:text-white transition-colors"
                   >
                     Contact

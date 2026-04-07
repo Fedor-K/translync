@@ -214,7 +214,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
     };
   }, []);
 
-  const listenUrl = sessionUrl || `https://translync.com/listen/${id}`;
+  const listenUrl = sessionUrl || `https://translync.app/listen/${id}`;
 
   // Volume bar — 8 segments
   const bars = Array.from({ length: 8 }, (_, i) => {

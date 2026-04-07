@@ -1,0 +1,40 @@
+# Translync
+
+> Real-time AI translation for live events. Attendees scan a QR code and hear translation in their language instantly.
+
+Translync is a web-based platform that provides real-time AI-powered translation for events, churches, NGOs, universities, and community gatherings. Speakers talk naturally into a microphone, and the AI transcribes, translates, and delivers audio in 70+ languages to attendees' phones — no app download required.
+
+## Key Facts
+
+- 70+ languages supported
+- Under 2 seconds latency
+- $3/hour per language pricing
+- 30 free minutes per month
+- No hardware or interpreters needed
+- Works in any browser via QR code
+- Speaker diarization (multi-speaker support)
+- Domain-specific glossaries (churches, NGOs, universities, communities)
+- Real-time text and AI voice output
+
+## Use Cases
+
+- Church services and sermons
+- NGO conferences and field trainings
+- University lectures and seminars
+- Community town halls and immigrant services
+- International conferences and events
+
+## How It Works
+
+1. Organizer creates a translation session at translync.app
+2. Shares a QR code with attendees
+3. Speaker talks — AI transcribes and translates in real-time
+4. Attendees hear or read the translation on their phone
+
+## Links
+
+- Website: https://translync.app
+- For Churches: https://translync.app/for/churches
+- For NGOs: https://translync.app/for/ngos
+- For Universities: https://translync.app/for/universities
+- For Communities: https://translync.app/for/communities

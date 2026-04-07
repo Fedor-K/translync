@@ -49,7 +49,7 @@ const plans = [
       "SLA guarantee",
     ],
     cta: "Contact Us",
-    href: "mailto:hello@translync.com",
+    href: "mailto:hello@translync.app",
     ctaStyle:
       "border-2 border-gray-300 text-gray-700 hover:bg-gray-50",
   },

@@ -35,12 +35,12 @@ export const metadata: Metadata = {
     title: "Translync — Real-Time AI Translation for Events",
     description:
       "Break language barriers at your events. AI-powered live translation in 70+ languages. No hardware required. From $3/hour.",
-    url: "https://translync.com",
+    url: "https://translync.app",
     siteName: "Translync",
     locale: "en_US",
     images: [
       {
-        url: "https://translync.com/og-image.png",
+        url: "https://translync.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Translync — Real-Time AI Translation for Events",
@@ -52,10 +52,10 @@ export const metadata: Metadata = {
     title: "Translync — Real-Time AI Translation for Events",
     description:
       "AI-powered live translation in 70+ languages. No hardware. From $3/hour.",
-    images: ["https://translync.com/og-image.png"],
+    images: ["https://translync.app/og-image.png"],
   },
   alternates: {
-    canonical: "https://translync.com",
+    canonical: "https://translync.app",
   },
 };
 
