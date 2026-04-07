@@ -38,11 +38,20 @@ export default async function LocalizedHomePage({ params }: Props) {
   if (!VALID_LOCALES.includes(locale)) notFound();
 
   const t = TRANSLATIONS[locale as keyof typeof TRANSLATIONS];
-  const isRTL = RTL_LOCALES.includes(locale as Locale);
-  const dir = isRTL ? "rtl" : "ltr";
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: t.faq.items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
 
   return (
-    <div dir={dir}>
+    <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       {/* Language Switcher + Hero */}
       <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
