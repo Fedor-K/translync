@@ -7,9 +7,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Translync — Real-Time AI Translation for Churches, NGOs & Events",
+  title: "Translync — AI Translation for Live Events",
   description:
-    "AI-powered live translation in 70+ languages. No hardware, no interpreters. Works in any browser — attendees scan a QR code and hear translation instantly. From $3/hour.",
+    "Real-time AI translation in 70+ languages. No hardware, no app. Attendees scan a QR code and hear translation instantly. From $3/hour.",
   keywords: [
     "real-time translation for events",
     "live interpretation software",
