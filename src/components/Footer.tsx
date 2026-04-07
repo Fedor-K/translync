@@ -37,6 +37,11 @@ export default function Footer() {
                     Blog
                   </a>
                 </li>
+                <li>
+                  <a href="/translation" className="hover:text-white transition-colors">
+                    Translation Services
+                  </a>
+                </li>
               </ul>
             </div>
             <div>

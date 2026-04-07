@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { getAllSlugs } from "@/lib/programmatic-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://translync.app";
@@ -29,6 +30,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     for (const seg of segments) {
       entries.push({ url: `${base}/${locale}/for/${seg}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 });
     }
+  }
+
+  // Programmatic SEO pages
+  entries.push({ url: `${base}/translation`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 });
+  for (const slug of getAllSlugs()) {
+    entries.push({ url: `${base}/translation/${slug}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 });
   }
 
   return entries;
