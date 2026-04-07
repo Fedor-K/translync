@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { TRANSLATIONS, LOCALES, RTL_LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n";
 import type { Metadata } from "next";
 import LocalizedFooter from "@/components/LocalizedFooter";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -56,19 +57,8 @@ export default async function LocalizedHomePage({ params }: Props) {
             <a href="#pricing" className="hover:text-white transition-colors">{t.nav.pricing}</a>
             <a href="#faq" className="hover:text-white transition-colors">{t.nav.faq}</a>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Language switcher */}
-            <div className="flex items-center gap-2 text-xs text-blue-300">
-              {(["en", ...VALID_LOCALES] as const).map((l) => (
-                <a
-                  key={l}
-                  href={l === "en" ? "/" : `/${l}`}
-                  className={`hover:text-white transition-colors ${l === locale ? "text-white font-bold" : ""}`}
-                >
-                  {LOCALE_NAMES[l as Locale]}
-                </a>
-              ))}
-            </div>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher current={locale} />
             <a href="/login" className="hidden sm:inline-block text-sm text-blue-200 hover:text-white transition-colors">{t.nav.signIn}</a>
             <a href="/login" className="bg-green-500 hover:bg-green-400 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors">{t.nav.startFree}</a>
           </div>
