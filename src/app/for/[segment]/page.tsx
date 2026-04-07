@@ -11,6 +11,7 @@ import SegmentTestimonial from "@/components/SegmentTestimonial";
 import SegmentFAQ from "@/components/SegmentFAQ";
 import SegmentCTA from "@/components/SegmentCTA";
 import SegmentGlossary from "@/components/SegmentGlossary";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 interface Props {
   params: Promise<{ segment: string }>;
@@ -38,6 +39,9 @@ export default async function SegmentPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-white">
       <SegmentHero hero={data.hero} />
+      <div className="max-w-5xl mx-auto px-6 pt-6">
+        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: data.label }]} />
+      </div>
       <SegmentSocialProof orgs={data.socialProof} />
       <HowItWorks />
       <Features />

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPost, listPosts } from "@/services/blog-publisher";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +122,7 @@ export default async function BlogPostPage({ params }: Props) {
       )}
 
       <main className="max-w-3xl mx-auto px-6 py-12">
+        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Blog", href: "/blog" }, { label: post.title }]} />
         {/* Meta */}
         <div className="flex items-center gap-3 mb-6">
           <span className="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full">

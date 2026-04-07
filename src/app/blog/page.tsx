@@ -1,4 +1,5 @@
 import { listPosts } from "@/services/blog-publisher";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function BlogPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
+        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Blog" }]} />
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             Translync Blog
