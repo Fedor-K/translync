@@ -26,6 +26,12 @@ export default function Hero() {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-blue-300">
+            <span className="text-white font-bold">EN</span>
+            <a href="/es" className="hover:text-white transition-colors">ES</a>
+            <a href="/zh" className="hover:text-white transition-colors">中文</a>
+            <a href="/ar" className="hover:text-white transition-colors">عربي</a>
+          </div>
           <a
             href="/login"
             className="hidden sm:inline-block text-sm text-blue-200 hover:text-white transition-colors"

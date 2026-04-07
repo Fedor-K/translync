@@ -56,6 +56,12 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "https://translync.app",
+    languages: {
+      en: "https://translync.app",
+      es: "https://translync.app/es",
+      zh: "https://translync.app/zh",
+      ar: "https://translync.app/ar",
+    },
   },
 };
 
