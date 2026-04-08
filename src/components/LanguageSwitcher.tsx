@@ -1,16 +1,57 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const LANGUAGES = [
-  { code: "en", name: "English", flag: "🇬🇧", href: "/" },
-  { code: "es", name: "Español", flag: "🇪🇸", href: "/es" },
-  { code: "zh", name: "中文", flag: "🇨🇳", href: "/zh" },
-  { code: "ar", name: "العربية", flag: "🇸🇦", href: "/ar" },
+  { code: "en", name: "English", flag: "🇬🇧" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
 ];
+
+const LOCALE_PREFIXES = ["es", "zh", "ar"];
+
+// Pages that have localized versions
+const LOCALIZABLE_PATHS = [
+  "", // homepage
+  "/for/churches",
+  "/for/ngos",
+  "/for/universities",
+  "/for/communities",
+];
+
+function getLocaleHref(targetLocale: string, currentPath: string): string {
+  // Strip current locale prefix from path
+  let cleanPath = currentPath;
+  for (const prefix of LOCALE_PREFIXES) {
+    if (cleanPath === `/${prefix}` || cleanPath.startsWith(`/${prefix}/`)) {
+      cleanPath = cleanPath.slice(prefix.length + 1) || "/";
+      break;
+    }
+  }
+
+  // Normalize
+  if (cleanPath === "/") cleanPath = "";
+
+  // Check if this path has a localized version
+  const isLocalizable = LOCALIZABLE_PATHS.includes(cleanPath);
+
+  if (targetLocale === "en") {
+    return cleanPath || "/";
+  }
+
+  if (isLocalizable) {
+    return `/${targetLocale}${cleanPath}`;
+  }
+
+  // For non-localizable pages (blog, translation, etc.), go to locale homepage
+  return `/${targetLocale}`;
+}
 
 export default function LanguageSwitcher({ current = "en" }: { current?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   const currentLang = LANGUAGES.find((l) => l.code === current) || LANGUAGES[0];
 
@@ -46,13 +87,12 @@ export default function LanguageSwitcher({ current = "en" }: { current?: string 
 
       {open && (
         <>
-          {/* Backdrop to prevent interaction with content below */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 min-w-[150px]" style={{ backgroundColor: "#ffffff" }}>
             {LANGUAGES.map((lang) => (
               <a
                 key={lang.code}
-                href={lang.href}
+                href={getLocaleHref(lang.code, pathname)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
                   lang.code === current
                     ? "bg-blue-50 text-blue-700 font-semibold"
