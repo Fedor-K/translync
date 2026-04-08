@@ -1,6 +1,7 @@
 import { getAllProgrammaticPages, TOTAL_PAGES } from "@/lib/programmatic-seo";
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -20,12 +21,7 @@ export default function TranslationIndexPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-900 text-white">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">Translync</a>
-          <a href="/login" className="bg-green-500 hover:bg-green-400 text-white font-semibold text-sm px-4 py-2 rounded-lg">Start Free</a>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-5xl mx-auto px-6 py-12">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Translation Services" }]} />

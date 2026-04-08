@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Translync",
@@ -9,12 +10,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-900 text-white px-6 py-5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">Translync</a>
-          <a href="/login" className="text-sm text-blue-200 hover:text-white">Sign in</a>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Terms of Service" }]} />

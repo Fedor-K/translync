@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getProgrammaticPage, getAllSlugs } from "@/lib/programmatic-seo";
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 interface Props {
@@ -53,15 +54,7 @@ export default async function ProgrammaticPage({ params }: Props) {
     <div className="min-h-screen bg-gray-50">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <header className="bg-blue-900 text-white">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">Translync</a>
-          <div className="flex items-center gap-6 text-sm">
-            <a href="/blog" className="text-blue-200 hover:text-white">Blog</a>
-            <a href="/login" className="bg-green-500 hover:bg-green-400 text-white font-semibold px-4 py-2 rounded-lg">Start Free</a>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Translation Services", href: "/translation" }, { label: `${page.eventType} in ${page.language}` }]} />

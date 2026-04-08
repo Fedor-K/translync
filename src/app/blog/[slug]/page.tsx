@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPost, listPosts } from "@/services/blog-publisher";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Navbar from "@/components/Navbar";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -98,17 +99,7 @@ export default async function BlogPostPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="bg-blue-900 text-white">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">Translync</a>
-          <div className="flex items-center gap-6 text-sm">
-            <a href="/blog" className="text-blue-200 hover:text-white">Blog</a>
-            <a href="/login" className="bg-green-500 hover:bg-green-400 text-white font-semibold px-4 py-2 rounded-lg">
-              Start Free
-            </a>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Cover Image */}
       {post.coverImage && (

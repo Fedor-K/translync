@@ -1,5 +1,6 @@
 import { listPosts } from "@/services/blog-publisher";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Navbar from "@/components/Navbar";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -22,17 +23,7 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-900 text-white">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <a href="/" className="font-bold text-xl">Translync</a>
-          <div className="flex items-center gap-6 text-sm">
-            <a href="/" className="text-blue-200 hover:text-white">Home</a>
-            <a href="/login" className="bg-green-500 hover:bg-green-400 text-white font-semibold px-4 py-2 rounded-lg">
-              Start Free
-            </a>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Blog" }]} />
