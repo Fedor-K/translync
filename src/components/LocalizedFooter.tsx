@@ -44,6 +44,7 @@ export default function LocalizedFooter({
                 <li><a href={`${prefix}#pricing`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Precios" : t.product === "产品" ? "价格" : t.product === "المنتج" ? "الأسعار" : "Pricing"}</a></li>
                 <li><a href={`${prefix}#faq`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Preguntas frecuentes" : t.product === "产品" ? "常见问题" : t.product === "المنتج" ? "الأسئلة الشائعة" : "FAQ"}</a></li>
                 <li><a href="/blog" className="hover:text-white transition-colors">{t.blog}</a></li>
+                <li><a href="/translation" className="hover:text-white transition-colors">{t.product === "Producto" ? "Servicios de traducción" : t.product === "产品" ? "翻译服务" : t.product === "المنتج" ? "خدمات الترجمة" : "Translation Services"}</a></li>
               </ul>
             </div>
             <div>
