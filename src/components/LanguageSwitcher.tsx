@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { setLocaleCookie } from "@/lib/use-locale";
 
 const LANGUAGES = [
   { code: "en", name: "English", flag: "🇬🇧" },
@@ -98,7 +99,7 @@ export default function LanguageSwitcher({ current = "en" }: { current?: string 
                     ? "bg-blue-50 text-blue-700 font-semibold"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
-                onClick={() => setOpen(false)}
+                onClick={() => { setLocaleCookie(lang.code as "en" | "es" | "zh" | "ar"); setOpen(false); }}
               >
                 <span>{lang.flag}</span>
                 <span>{lang.name}</span>

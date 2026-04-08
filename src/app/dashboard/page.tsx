@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import { LANGUAGE_NAMES } from "@/lib/translate";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useLocale } from "@/lib/use-locale";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 /* ── Constants ────────────────────────────────────────────────── */
 
@@ -413,6 +415,7 @@ function SessionRow({
 /* ── Main Dashboard ──────────────────────────────────────────── */
 
 export default function Dashboard() {
+  const { locale, dashboard: dt } = useLocale();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -468,12 +471,13 @@ export default function Dashboard() {
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher current={locale} />
             <span className="text-sm text-gray-500 hidden sm:block">{userEmail}</span>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="text-sm text-gray-400 hover:text-gray-600"
             >
-              Sign out
+              {dt.signOut}
             </button>
             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
               <span className="text-blue-700 font-semibold text-sm">{userInitial}</span>
@@ -487,16 +491,16 @@ export default function Dashboard() {
         {/* Title row */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{dt.title}</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Manage your translation streams
+              {dt.subtitle}
             </p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition hidden sm:block"
           >
-            + New Stream
+            {dt.newStream}
           </button>
         </div>
 
@@ -506,7 +510,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
                 <div>
-                  <h2 className="font-bold text-gray-900">Your Streams</h2>
+                  <h2 className="font-bold text-gray-900">{dt.yourStreams}</h2>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {sessions_list.length} session{sessions_list.length !== 1 ? "s" : ""} total
                   </p>
@@ -530,15 +534,15 @@ export default function Dashboard() {
                     <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
                       <span className="text-blue-500 text-2xl font-bold">+</span>
                     </div>
-                    <p className="text-gray-500 font-medium mb-1">No streams yet</p>
+                    <p className="text-gray-500 font-medium mb-1">{dt.noStreamsTitle}</p>
                     <p className="text-gray-400 text-sm mb-4">
-                      Create your first translation stream to get started
+                      {dt.noStreamsSubtitle}
                     </p>
                     <button
                       onClick={() => setShowCreate(true)}
                       className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition"
                     >
-                      Create First Stream
+                      {dt.createFirstStream}
                     </button>
                   </div>
                 ) : (
@@ -569,7 +573,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             {/* Usage card */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h2 className="font-bold text-gray-900 mb-1">Usage This Month</h2>
+              <h2 className="font-bold text-gray-900 mb-1">{dt.usageThisMonth}</h2>
               <p className="text-xs text-gray-400 mb-4">
                 {new Date().toLocaleString("en", { month: "long", year: "numeric" })}
               </p>
@@ -577,18 +581,18 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 rounded-xl p-3 text-center">
                   <div className="text-2xl font-bold text-blue-600">{stats.totalMinutes}</div>
-                  <div className="text-xs text-blue-500 font-medium mt-0.5">Minutes</div>
+                  <div className="text-xs text-blue-500 font-medium mt-0.5">{dt.minutes}</div>
                 </div>
                 <div className="bg-gray-100 rounded-xl p-3 text-center">
                   <div className="text-2xl font-bold text-gray-700">{stats.totalSessions}</div>
-                  <div className="text-xs text-gray-500 font-medium mt-0.5">Sessions</div>
+                  <div className="text-xs text-gray-500 font-medium mt-0.5">{dt.sessions}</div>
                 </div>
               </div>
 
               {/* Simple usage bar */}
               <div>
                 <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                  <span>Free tier</span>
+                  <span>{dt.freeTier}</span>
                   <span>{stats.totalMinutes} / 30 min</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -602,11 +606,11 @@ export default function Dashboard() {
 
             {/* Languages card */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h2 className="font-bold text-gray-900 mb-1">Languages This Month</h2>
-              <p className="text-xs text-gray-400 mb-4">Languages used in your sessions</p>
+              <h2 className="font-bold text-gray-900 mb-1">{dt.languagesThisMonth}</h2>
+              <p className="text-xs text-gray-400 mb-4">{dt.languagesThisMonth}</p>
 
               {stats.languagesUsed.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No languages used yet</p>
+                <p className="text-sm text-gray-400 italic">{dt.noLanguagesYet}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {stats.languagesUsed.map((lang) => (

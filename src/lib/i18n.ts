@@ -99,6 +99,93 @@ interface TranslationSchema {
   breadcrumbs: {
     home: string;
   };
+  dashboard: {
+    title: string;
+    subtitle: string;
+    newStream: string;
+    yourStreams: string;
+    sessionsTotal: string;
+    noStreamsTitle: string;
+    noStreamsSubtitle: string;
+    createFirstStream: string;
+    createNewStream: string;
+    usageThisMonth: string;
+    minutes: string;
+    sessions: string;
+    freeTier: string;
+    languagesThisMonth: string;
+    noLanguagesYet: string;
+    howItWorksTitle: string;
+    howItWorksSteps: string[];
+    learnMore: string;
+    signOut: string;
+    // Create session modal
+    newTranslationStream: string;
+    sessionName: string;
+    sessionNamePlaceholder: string;
+    sessionNameHint: string;
+    domain: string;
+    speakerLanguage: string;
+    translateTo: string;
+    estimatedCost: string;
+    perHour: string;
+    language: string;
+    languages: string;
+    startTranslationSession: string;
+    freeMinutesNote: string;
+    selectAtLeastOne: string;
+    // Session row
+    live: string;
+    ended: string;
+    expired: string;
+    open: string;
+    copyLink: string;
+    copied: string;
+    qr: string;
+    remove: string;
+    shareSession: string;
+    downloadQR: string;
+  };
+  session: {
+    readyToStart: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+    startTranslation: string;
+    micPermission: string;
+    connecting: string;
+    hearingYou: string;
+    speakIntoMic: string;
+    stopSession: string;
+    sessionEnded: string;
+    totalSegments: string;
+    shareWithAudience: string;
+    shareSubtitle: string;
+    preview: string;
+    liveTranscript: string;
+    micBlocked: string;
+    tryAgain: string;
+    // OBS section
+    streamViaOBS: string;
+    obsAlternative: string;
+    obsDescription: string;
+    obsRtmpUrl: string;
+    obsStreamKey: string;
+    obsCopy: string;
+    obsSetupTitle: string;
+    obsSteps: string[];
+    obsTip: string;
+  };
+  listen: {
+    selectLanguage: string;
+    listening: string;
+    waiting: string;
+    sessionEndedTitle: string;
+    sessionEndedSubtitle: string;
+    mute: string;
+    unmute: string;
+  };
 }
 
 export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
@@ -318,6 +405,100 @@ export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
     breadcrumbs: {
       home: "Inicio",
     },
+    dashboard: {
+      title: "Panel de control",
+      subtitle: "Gestiona tus transmisiones de traducción en vivo.",
+      newStream: "Nueva transmisión",
+      yourStreams: "Tus transmisiones",
+      sessionsTotal: "sesiones en total",
+      noStreamsTitle: "Aún no tienes transmisiones",
+      noStreamsSubtitle: "Crea tu primera transmisión para comenzar a traducir en vivo.",
+      createFirstStream: "Crear mi primera transmisión",
+      createNewStream: "Crear nueva transmisión",
+      usageThisMonth: "Uso este mes",
+      minutes: "minutos",
+      sessions: "sesiones",
+      freeTier: "Plan gratuito",
+      languagesThisMonth: "Idiomas este mes",
+      noLanguagesYet: "Aún no hay idiomas",
+      howItWorksTitle: "¿Cómo funciona?",
+      howItWorksSteps: [
+        "Crea una transmisión y elige los idiomas.",
+        "Comparte el código QR con tu audiencia.",
+        "Habla con naturalidad — la IA traduce en tiempo real.",
+        "Los asistentes leen los subtítulos en su idioma.",
+      ],
+      learnMore: "Más información",
+      signOut: "Cerrar sesión",
+      newTranslationStream: "Nueva transmisión de traducción",
+      sessionName: "Nombre de la sesión",
+      sessionNamePlaceholder: "Ej: Conferencia de primavera",
+      sessionNameHint: "Un nombre descriptivo para identificar tu sesión.",
+      domain: "Dominio",
+      speakerLanguage: "Idioma del orador",
+      translateTo: "Traducir a",
+      estimatedCost: "Costo estimado",
+      perHour: "por hora",
+      language: "idioma",
+      languages: "idiomas",
+      startTranslationSession: "Iniciar sesión de traducción",
+      freeMinutesNote: "Los primeros 30 minutos son gratis.",
+      selectAtLeastOne: "Selecciona al menos un idioma",
+      live: "En vivo",
+      ended: "Finalizada",
+      expired: "Expirada",
+      open: "Abrir",
+      copyLink: "Copiar enlace",
+      copied: "¡Copiado!",
+      qr: "QR",
+      remove: "Eliminar",
+      shareSession: "Compartir sesión",
+      downloadQR: "Descargar QR",
+    },
+    session: {
+      readyToStart: "Listo para comenzar",
+      step1: "Permite el acceso al micrófono.",
+      step2: "Haz clic en «Iniciar traducción» para comenzar.",
+      step3: "Habla con claridad cerca del micrófono.",
+      step4: "Comparte el código QR con tu audiencia.",
+      startTranslation: "Iniciar traducción",
+      micPermission: "Permiso de micrófono",
+      connecting: "Conectando…",
+      hearingYou: "Te estamos escuchando",
+      speakIntoMic: "Habla cerca del micrófono",
+      stopSession: "Detener sesión",
+      sessionEnded: "Sesión finalizada",
+      totalSegments: "Segmentos totales",
+      shareWithAudience: "Compartir con la audiencia",
+      shareSubtitle: "Los asistentes escanean el código QR para leer los subtítulos en su idioma.",
+      preview: "Vista previa",
+      liveTranscript: "Transcripción en vivo",
+      micBlocked: "Micrófono bloqueado",
+      tryAgain: "Intentar de nuevo",
+      streamViaOBS: "Transmitir vía OBS",
+      obsAlternative: "Alternativa: usar OBS Studio",
+      obsDescription: "Transmite el audio de tu evento a través de OBS Studio en lugar del micrófono del navegador.",
+      obsRtmpUrl: "URL RTMP",
+      obsStreamKey: "Clave de transmisión",
+      obsCopy: "Copiar",
+      obsSetupTitle: "Configuración de OBS",
+      obsSteps: [
+        "Abre OBS Studio y ve a Ajustes → Transmisión.",
+        "Selecciona «Personalizado» como servicio.",
+        "Pega la URL RTMP y la clave de transmisión.",
+        "Haz clic en «Iniciar transmisión» en OBS.",
+      ],
+      obsTip: "Consejo: usa una fuente de audio dedicada para obtener la mejor calidad de traducción.",
+    },
+    listen: {
+      selectLanguage: "Selecciona tu idioma",
+      listening: "Escuchando…",
+      waiting: "Esperando al orador…",
+      sessionEndedTitle: "La sesión ha finalizado",
+      sessionEndedSubtitle: "El orador ha terminado la transmisión. Gracias por participar.",
+      mute: "Silenciar",
+      unmute: "Activar sonido",
+    },
   },
 
   // ---------------------------------------------------------------------------
@@ -529,6 +710,100 @@ export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
     },
     breadcrumbs: {
       home: "首页",
+    },
+    dashboard: {
+      title: "控制台",
+      subtitle: "管理你的实时翻译频道。",
+      newStream: "新建频道",
+      yourStreams: "你的频道",
+      sessionsTotal: "场会话",
+      noStreamsTitle: "暂无翻译频道",
+      noStreamsSubtitle: "创建你的第一个频道，开始实时翻译。",
+      createFirstStream: "创建第一个频道",
+      createNewStream: "新建频道",
+      usageThisMonth: "本月用量",
+      minutes: "分钟",
+      sessions: "场会话",
+      freeTier: "免费版",
+      languagesThisMonth: "本月使用语言",
+      noLanguagesYet: "暂无语言记录",
+      howItWorksTitle: "如何使用？",
+      howItWorksSteps: [
+        "创建频道并选择目标语言。",
+        "将二维码分享给你的听众。",
+        "自然地说话——AI 会实时翻译。",
+        "听众在手机上阅读所选语言的字幕。",
+      ],
+      learnMore: "了解更多",
+      signOut: "退出登录",
+      newTranslationStream: "新建翻译频道",
+      sessionName: "会话名称",
+      sessionNamePlaceholder: "例如：春季研讨会",
+      sessionNameHint: "为会话起一个便于识别的名称。",
+      domain: "领域",
+      speakerLanguage: "发言语言",
+      translateTo: "翻译为",
+      estimatedCost: "预估费用",
+      perHour: "每小时",
+      language: "种语言",
+      languages: "种语言",
+      startTranslationSession: "开始翻译会话",
+      freeMinutesNote: "前 30 分钟免费使用。",
+      selectAtLeastOne: "请至少选择一种语言",
+      live: "直播中",
+      ended: "已结束",
+      expired: "已过期",
+      open: "打开",
+      copyLink: "复制链接",
+      copied: "已复制！",
+      qr: "二维码",
+      remove: "删除",
+      shareSession: "分享会话",
+      downloadQR: "下载二维码",
+    },
+    session: {
+      readyToStart: "准备就绪",
+      step1: "允许访问麦克风。",
+      step2: "点击「开始翻译」按钮。",
+      step3: "靠近麦克风清晰地说话。",
+      step4: "将二维码分享给你的听众。",
+      startTranslation: "开始翻译",
+      micPermission: "麦克风权限",
+      connecting: "连接中…",
+      hearingYou: "正在收听你的声音",
+      speakIntoMic: "请对着麦克风说话",
+      stopSession: "停止会话",
+      sessionEnded: "会话已结束",
+      totalSegments: "总片段数",
+      shareWithAudience: "分享给听众",
+      shareSubtitle: "听众扫描二维码即可阅读所选语言的字幕。",
+      preview: "预览",
+      liveTranscript: "实时转录",
+      micBlocked: "麦克风被阻止",
+      tryAgain: "重试",
+      streamViaOBS: "通过 OBS 推流",
+      obsAlternative: "备选方案：使用 OBS Studio",
+      obsDescription: "通过 OBS Studio 推送活动音频，替代浏览器麦克风。",
+      obsRtmpUrl: "RTMP 地址",
+      obsStreamKey: "推流密钥",
+      obsCopy: "复制",
+      obsSetupTitle: "OBS 配置步骤",
+      obsSteps: [
+        "打开 OBS Studio，进入 设置 → 推流。",
+        "服务选择「自定义」。",
+        "粘贴 RTMP 地址和推流密钥。",
+        "在 OBS 中点击「开始推流」。",
+      ],
+      obsTip: "提示：使用专用音频源可获得最佳翻译质量。",
+    },
+    listen: {
+      selectLanguage: "选择你的语言",
+      listening: "收听中…",
+      waiting: "等待发言者…",
+      sessionEndedTitle: "会话已结束",
+      sessionEndedSubtitle: "发言者已结束直播，感谢你的参与。",
+      mute: "静音",
+      unmute: "取消静音",
     },
   },
 
@@ -746,6 +1021,100 @@ export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
     },
     breadcrumbs: {
       home: "الرئيسية",
+    },
+    dashboard: {
+      title: "لوحة التحكم",
+      subtitle: "أدِر قنوات الترجمة الفورية الخاصة بك.",
+      newStream: "بث جديد",
+      yourStreams: "قنواتك",
+      sessionsTotal: "جلسات إجمالًا",
+      noStreamsTitle: "لا توجد قنوات بعد",
+      noStreamsSubtitle: "أنشئ قناتك الأولى لبدء الترجمة الفورية.",
+      createFirstStream: "أنشئ قناتك الأولى",
+      createNewStream: "إنشاء قناة جديدة",
+      usageThisMonth: "الاستخدام هذا الشهر",
+      minutes: "دقائق",
+      sessions: "جلسات",
+      freeTier: "الباقة المجانية",
+      languagesThisMonth: "اللغات هذا الشهر",
+      noLanguagesYet: "لا توجد لغات بعد",
+      howItWorksTitle: "كيف يعمل؟",
+      howItWorksSteps: [
+        "أنشئ قناة واختر اللغات المطلوبة.",
+        "شارك رمز QR مع جمهورك.",
+        "تحدّث بشكل طبيعي — الذكاء الاصطناعي يترجم فوريًا.",
+        "يقرأ الحضور الترجمة على هواتفهم بلغتهم المفضلة.",
+      ],
+      learnMore: "اعرف المزيد",
+      signOut: "تسجيل الخروج",
+      newTranslationStream: "قناة ترجمة جديدة",
+      sessionName: "اسم الجلسة",
+      sessionNamePlaceholder: "مثال: مؤتمر الربيع",
+      sessionNameHint: "اسم وصفي يساعدك على تمييز الجلسة.",
+      domain: "المجال",
+      speakerLanguage: "لغة المتحدث",
+      translateTo: "ترجمة إلى",
+      estimatedCost: "التكلفة التقديرية",
+      perHour: "في الساعة",
+      language: "لغة",
+      languages: "لغات",
+      startTranslationSession: "بدء جلسة الترجمة",
+      freeMinutesNote: "أول 30 دقيقة مجانية.",
+      selectAtLeastOne: "اختر لغة واحدة على الأقل",
+      live: "مباشر",
+      ended: "انتهت",
+      expired: "منتهية الصلاحية",
+      open: "فتح",
+      copyLink: "نسخ الرابط",
+      copied: "تم النسخ!",
+      qr: "رمز QR",
+      remove: "حذف",
+      shareSession: "مشاركة الجلسة",
+      downloadQR: "تحميل رمز QR",
+    },
+    session: {
+      readyToStart: "جاهز للبدء",
+      step1: "اسمح بالوصول إلى الميكروفون.",
+      step2: "انقر على «بدء الترجمة» للانطلاق.",
+      step3: "تحدّث بوضوح بالقرب من الميكروفون.",
+      step4: "شارك رمز QR مع جمهورك.",
+      startTranslation: "بدء الترجمة",
+      micPermission: "إذن الميكروفون",
+      connecting: "جارٍ الاتصال…",
+      hearingYou: "نسمعك الآن",
+      speakIntoMic: "تحدّث في الميكروفون",
+      stopSession: "إيقاف الجلسة",
+      sessionEnded: "انتهت الجلسة",
+      totalSegments: "إجمالي المقاطع",
+      shareWithAudience: "مشاركة مع الجمهور",
+      shareSubtitle: "يمسح الحضور رمز QR لقراءة الترجمة بلغتهم المفضلة.",
+      preview: "معاينة",
+      liveTranscript: "النص المباشر",
+      micBlocked: "الميكروفون محظور",
+      tryAgain: "حاول مجددًا",
+      streamViaOBS: "البث عبر OBS",
+      obsAlternative: "بديل: استخدام OBS Studio",
+      obsDescription: "أرسل صوت الفعالية عبر OBS Studio بدلًا من ميكروفون المتصفح.",
+      obsRtmpUrl: "عنوان RTMP",
+      obsStreamKey: "مفتاح البث",
+      obsCopy: "نسخ",
+      obsSetupTitle: "إعداد OBS",
+      obsSteps: [
+        "افتح OBS Studio وانتقل إلى الإعدادات ← البث.",
+        "اختر «مخصص» كنوع الخدمة.",
+        "الصق عنوان RTMP ومفتاح البث.",
+        "انقر على «بدء البث» في OBS.",
+      ],
+      obsTip: "نصيحة: استخدم مصدر صوت مخصصًا للحصول على أفضل جودة ترجمة.",
+    },
+    listen: {
+      selectLanguage: "اختر لغتك",
+      listening: "جارٍ الاستماع…",
+      waiting: "بانتظار المتحدث…",
+      sessionEndedTitle: "انتهت الجلسة",
+      sessionEndedSubtitle: "أنهى المتحدث البث. شكرًا لمشاركتك.",
+      mute: "كتم الصوت",
+      unmute: "إلغاء كتم الصوت",
     },
   },
 };
