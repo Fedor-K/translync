@@ -1,11 +1,14 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { use } from "react";
+import { useLocale } from "@/lib/use-locale";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const RT_URL = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { locale, session: st } = useLocale();
   const [status, setStatus] = useState<"idle" | "requesting" | "recording" | "ended">("idle");
   const [transcript, setTranscript] = useState<string[]>([]);
   const [interimText, setInterimText] = useState("");
@@ -226,12 +229,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-blue-900 text-white px-6 py-4 flex items-center justify-between">
+      <div className="bg-blue-900 text-white px-6 py-4 flex items-center justify-between relative z-20">
         <div>
           <span className="font-bold text-lg">Translync</span>
           <span className="ml-3 text-blue-300 text-sm">Session #{id}</span>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher current={locale} />
           {connected && (
             <span className="text-xs text-green-300 bg-green-900/30 px-2 py-0.5 rounded">
               WS
@@ -249,8 +253,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Share + QR */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-1">Share with audience</h2>
-          <p className="text-gray-500 text-sm mb-4">Attendees scan QR or open the link on their phone</p>
+          <h2 className="font-bold text-gray-900 mb-1">{st.shareWithAudience}</h2>
+          <p className="text-gray-500 text-sm mb-4">{st.shareSubtitle}</p>
 
           <div className="flex flex-col sm:flex-row gap-5">
             {/* QR Code */}
@@ -301,23 +305,23 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           {status === "idle" && error !== "blocked" && (
             <>
               <div className="mb-6">
-                <h3 className="font-bold text-gray-900 text-lg mb-3">Ready to start</h3>
+                <h3 className="font-bold text-gray-900 text-lg mb-3">{st.readyToStart}</h3>
                 <ol className="text-sm text-gray-600 text-left space-y-2 max-w-xs mx-auto">
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                    <span>Share the QR code above with your audience</span>
+                    <span>{st.step1}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                    <span>Click <strong>Start Translation</strong> below</span>
+                    <span>{st.step2}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                    <span>Allow microphone access when your browser asks</span>
+                    <span>{st.step3}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
-                    <span>Speak naturally — translations appear live for your audience</span>
+                    <span>{st.step4}</span>
                   </li>
                 </ol>
               </div>
@@ -325,21 +329,21 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 onClick={startRecording}
                 className="bg-green-500 hover:bg-green-600 text-white font-bold px-10 py-4 rounded-2xl text-lg transition shadow-lg shadow-green-500/25"
               >
-                Start Translation
+                {st.startTranslation}
               </button>
-              <p className="text-gray-400 text-xs mt-3">Your browser will ask for microphone permission</p>
+              <p className="text-gray-400 text-xs mt-3">{st.micPermission}</p>
               {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
             </>
           )}
           {status === "requesting" && (
             <>
               <div className="text-4xl mb-3 animate-pulse">...</div>
-              <p className="text-blue-600 font-semibold">Connecting...</p>
+              <p className="text-blue-600 font-semibold">{st.connecting}</p>
             </>
           )}
           {error === "blocked" && (
             <div className="text-left">
-              <p className="font-bold text-gray-900 text-center mb-4">Microphone access blocked</p>
+              <p className="font-bold text-gray-900 text-center mb-4">{st.micBlocked}</p>
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-4">
                 <p className="font-semibold mb-2">On iPhone / Safari:</p>
                 <ol className="list-decimal list-inside space-y-1">
@@ -358,7 +362,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 onClick={() => { setError(""); setStatus("idle"); }}
                 className="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition"
               >
-                Try Again
+                {st.tryAgain}
               </button>
             </div>
           )}
@@ -379,20 +383,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                 </div>
               </div>
               <p className="text-green-600 font-semibold mb-4">
-                {volume > 5 ? "Hearing you..." : "Speak into microphone"}
+                {volume > 5 ? st.hearingYou : st.speakIntoMic}
               </p>
               <button
                 onClick={stopRecording}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition"
               >
-                Stop Session
+                {st.stopSession}
               </button>
             </>
           )}
           {status === "ended" && (
             <div className="text-gray-500">
-              <p className="font-semibold">Session ended</p>
-              <p className="text-sm mt-1">Total segments: {transcript.length}</p>
+              <p className="font-semibold">{st.sessionEnded}</p>
+              <p className="text-sm mt-1">{st.totalSegments}: {transcript.length}</p>
             </div>
           )}
         </div>
@@ -400,10 +404,10 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         {/* Stream via OBS */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="font-bold text-gray-900">Stream via OBS</h2>
-            <span className="bg-gray-100 text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">Alternative</span>
+            <h2 className="font-bold text-gray-900">{st.streamViaOBS}</h2>
+            <span className="bg-gray-100 text-gray-500 text-xs font-medium px-2 py-0.5 rounded-full">{st.obsAlternative}</span>
           </div>
-          <p className="text-gray-500 text-sm mb-4">Use OBS Studio instead of browser microphone for professional audio</p>
+          <p className="text-gray-500 text-sm mb-4">{st.obsDescription}</p>
 
           <div className="space-y-3 mb-5">
             <div>
@@ -452,7 +456,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         {/* Live Transcript */}
         {(transcript.length > 0 || interimText) && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h2 className="font-bold text-gray-900 mb-3">Live Transcript</h2>
+            <h2 className="font-bold text-gray-900 mb-3">{st.liveTranscript}</h2>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {transcript.map((t, i) => (
                 <p key={i} className="text-gray-700 text-sm py-2 border-b border-gray-50 last:border-0">

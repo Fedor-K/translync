@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { use } from "react";
+import { useLocale } from "@/lib/use-locale";
 
 const RT_URL = process.env.NEXT_PUBLIC_RT_URL || "http://localhost:3001";
 
@@ -68,6 +69,7 @@ class AudioPlayer {
 
 export default function ListenPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { listen: lt } = useLocale();
   const [lang, setLang] = useState("");
   const [targetLangs, setTargetLangs] = useState<string[]>([]);
   const [chunks, setChunks] = useState<Chunk[]>([]);
@@ -214,7 +216,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
             onClick={() => setStarted(true)}
             className="w-full bg-blue-700 text-white font-bold py-3 rounded-xl disabled:opacity-40 hover:bg-blue-800 transition"
           >
-            Start Listening
+            {lt.listening}
           </button>
         </div>
       </div>
@@ -245,7 +247,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
               });
             }}
             className="text-gray-400 text-sm hover:text-white"
-            title={ttsEnabled ? "Mute voice" : "Enable voice"}
+            title={ttsEnabled ? lt.mute : lt.unmute}
           >
             {ttsEnabled ? "🔊" : "🔇"}
           </button>
@@ -269,7 +271,7 @@ export default function ListenPage({ params }: { params: Promise<{ id: string }>
         {chunks.length === 0 && !interimText ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <div className="text-4xl mb-3 animate-pulse">...</div>
-            <p>Waiting for speaker...</p>
+            <p>{lt.waiting}</p>
           </div>
         ) : (
           <div className="space-y-4">
