@@ -19,6 +19,10 @@ export interface Session {
   targetLanguages: string[];
   domain?: string;
   customGlossary?: Record<string, Record<string, string>>;
+  startedAt?: number;
+  endedAt?: number;
+  durationMs?: number;
+  peakListeners?: number;
 }
 
 export interface TranscriptChunk {
@@ -67,14 +71,53 @@ export async function getChunksSince(
     .filter((c): c is TranscriptChunk => c !== null && c.timestamp > since);
 }
 
+export async function setSessionStarted(sessionId: string): Promise<void> {
+  const session = await getSession(sessionId);
+  if (!session) return;
+  session.startedAt = Date.now();
+  await redis.set(`session:${sessionId.toUpperCase()}`, JSON.stringify(session));
+}
+
 export async function setSessionInactive(sessionId: string): Promise<void> {
   const session = await getSession(sessionId);
   if (!session) return;
   session.active = false;
+  session.endedAt = Date.now();
+  if (session.startedAt) {
+    session.durationMs = session.endedAt - session.startedAt;
+  }
   await redis.set(
     `session:${sessionId.toUpperCase()}`,
     JSON.stringify(session)
   );
+}
+
+// Listener tracking per session
+const LISTENER_KEY_PREFIX = "listeners:";
+
+export async function incrementListeners(sessionId: string): Promise<number> {
+  const key = `${LISTENER_KEY_PREFIX}${sessionId.toUpperCase()}`;
+  const count = await redis.incr(key);
+  await redis.expire(key, 86400);
+  // Update peak in session
+  const session = await getSession(sessionId);
+  if (session && (!session.peakListeners || count > session.peakListeners)) {
+    session.peakListeners = count;
+    await redis.set(`session:${sessionId.toUpperCase()}`, JSON.stringify(session));
+  }
+  return count;
+}
+
+export async function decrementListeners(sessionId: string): Promise<number> {
+  const key = `${LISTENER_KEY_PREFIX}${sessionId.toUpperCase()}`;
+  const count = await redis.decr(key);
+  return Math.max(0, count);
+}
+
+export async function getListenerCount(sessionId: string): Promise<number> {
+  const key = `${LISTENER_KEY_PREFIX}${sessionId.toUpperCase()}`;
+  const count = await redis.get(key);
+  return Math.max(0, parseInt(count || "0", 10));
 }
 
 // Pub/Sub helpers

@@ -48,6 +48,8 @@ export async function GET(req: NextRequest) {
           createdAt: meta.createdAt,
           active: liveSession?.active ?? false,
           exists: liveSession !== null,
+          durationMs: liveSession?.durationMs || undefined,
+          peakListeners: liveSession?.peakListeners || undefined,
         };
       })
     );

@@ -14,6 +14,10 @@ export interface Session {
   targetLanguages: string[];
   domain?: string;
   customGlossary?: Record<string, Record<string, string>>;
+  startedAt?: number;
+  endedAt?: number;
+  durationMs?: number;
+  peakListeners?: number;
 }
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL!;

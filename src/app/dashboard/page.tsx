@@ -29,6 +29,8 @@ interface SessionInfo {
   createdAt: number;
   active: boolean;
   exists: boolean;
+  durationMs?: number;
+  peakListeners?: number;
 }
 
 interface DashboardData {
@@ -374,6 +376,12 @@ function SessionRow({
             {" -> "}
             {session.targetLanguages.map((l) => LANGUAGE_NAMES[l] || l).join(", ")}
             <span className="ml-2 text-gray-400">· {timeLabel}</span>
+            {session.durationMs != null && (
+              <span className="ml-2 text-gray-400">· {Math.round(session.durationMs / 60000)} min</span>
+            )}
+            {session.peakListeners != null && session.peakListeners > 0 && (
+              <span className="ml-2 text-gray-400">· {session.peakListeners} listener{session.peakListeners !== 1 ? "s" : ""}</span>
+            )}
           </div>
         </div>
       </div>

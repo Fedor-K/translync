@@ -4,6 +4,8 @@ import {
   getSession,
   getChunksSince,
   subscribeToLanguage,
+  incrementListeners,
+  decrementListeners,
 } from "./redis.js";
 import { synthesize } from "./tts.js";
 
@@ -29,8 +31,9 @@ export async function handleListenerWebSocket(
     return;
   }
 
+  const listenerCount = await incrementListeners(sessionId);
   console.log(
-    `[listener] Connected: session=${sessionId}, lang=${lang}, tts=${ttsEnabled}`
+    `[listener] Connected: session=${sessionId}, lang=${lang}, tts=${ttsEnabled}, listeners=${listenerCount}`
   );
 
   ws.send(JSON.stringify({ type: "connected", sessionId, lang }));
@@ -92,9 +95,10 @@ export async function handleListenerWebSocket(
     if (ws.readyState === 1) ws.ping();
   }, 30000);
 
-  ws.on("close", () => {
+  ws.on("close", async () => {
     clearInterval(pingTimer);
     unsubscribe();
+    await decrementListeners(sessionId);
     console.log(`[listener] Disconnected: session=${sessionId}, lang=${lang}`);
   });
 

@@ -7,6 +7,7 @@ import {
   storeChunk,
   publishTranslation,
   setSessionInactive,
+  setSessionStarted,
 } from "./redis.js";
 
 export async function handleAudioWebSocket(
@@ -97,7 +98,8 @@ export async function handleAudioWebSocket(
     console.error(`[ws] Deepgram error for session ${sessionId}:`, err);
   });
 
-  // Start Deepgram streaming
+  // Mark session as started and begin Deepgram streaming
+  await setSessionStarted(sessionId);
   await dg.start();
 
   // Forward audio from WebSocket to Deepgram
