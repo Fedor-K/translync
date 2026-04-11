@@ -20,6 +20,7 @@ const LOCALIZABLE_PATHS = [
   "/for/ngos",
   "/for/universities",
   "/for/communities",
+  "/zoom-interpretation-alternative",
 ];
 
 function getLocaleHref(targetLocale: string, currentPath: string): string {
