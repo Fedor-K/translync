@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { SEGMENTS, SEGMENT_SLUGS } from "@/lib/segments";
+import { SEGMENT_TRANSLATIONS } from "@/lib/segments-i18n";
 import { TRANSLATIONS, LOCALE_NAMES, RTL_LOCALES, type Locale } from "@/lib/i18n";
 import type { Metadata } from "next";
-import HowItWorks from "@/components/HowItWorks";
-import Features from "@/components/Features";
-import Pricing from "@/components/Pricing";
 import LocalizedFooter from "@/components/LocalizedFooter";
 import SegmentHero from "@/components/SegmentHero";
 import SegmentSocialProof from "@/components/SegmentSocialProof";
@@ -32,8 +30,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, segment } = await params;
-  const data = SEGMENTS[segment];
-  if (!data || !VALID_LOCALES.includes(locale)) return {};
+  if (!VALID_LOCALES.includes(locale)) return {};
+  // Use translated meta if available, fallback to English
+  const data = SEGMENT_TRANSLATIONS[locale]?.[segment] || SEGMENTS[segment];
+  if (!data) return {};
   return {
     title: data.meta.title,
     description: data.meta.description,
@@ -44,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         es: `https://translync.app/es/for/${segment}`,
         zh: `https://translync.app/zh/for/${segment}`,
         ar: `https://translync.app/ar/for/${segment}`,
+        pt: `https://translync.app/pt/for/${segment}`,
       },
     },
   };
@@ -52,7 +53,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LocalizedSegmentPage({ params }: Props) {
   const { locale, segment } = await params;
   if (!VALID_LOCALES.includes(locale)) notFound();
-  const data = SEGMENTS[segment];
+
+  // Use translated content, fallback to English
+  const data = SEGMENT_TRANSLATIONS[locale]?.[segment] || SEGMENTS[segment];
   if (!data) notFound();
 
   const isRTL = RTL_LOCALES.includes(locale as Locale);
@@ -64,11 +67,8 @@ export default async function LocalizedSegmentPage({ params }: Props) {
         <Breadcrumbs items={[{ label: LOCALE_NAMES[locale as Locale], href: `/${locale}` }, { label: data.label }]} />
       </div>
       <SegmentSocialProof orgs={data.socialProof} />
-      <HowItWorks />
-      <Features />
       <SegmentGlossary glossary={data.glossaryFeature} />
       <SegmentTestimonial testimonial={data.testimonial} />
-      <Pricing />
       <SegmentFAQ faqs={data.faq} />
       <SegmentCTA cta={data.cta} />
       <LocalizedFooter t={TRANSLATIONS[locale as keyof typeof TRANSLATIONS].footer} locale={locale} />
