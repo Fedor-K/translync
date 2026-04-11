@@ -3,7 +3,7 @@ import { getAllSlugs } from "@/lib/programmatic-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://translync.app";
-  const locales = ["es", "zh", "ar"];
+  const locales = ["es", "zh", "ar", "pt"];
   const segments = ["churches", "ngos", "universities", "communities"];
 
   const entries: MetadataRoute.Sitemap = [

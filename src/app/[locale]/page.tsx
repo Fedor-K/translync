@@ -8,7 +8,7 @@ interface Props {
   params: Promise<{ locale: string }>;
 }
 
-const VALID_LOCALES = ["es", "zh", "ar"];
+const VALID_LOCALES = ["es", "zh", "ar", "pt"];
 
 export async function generateStaticParams() {
   return VALID_LOCALES.map((locale) => ({ locale }));

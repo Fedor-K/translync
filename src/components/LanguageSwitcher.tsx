@@ -8,9 +8,10 @@ const LANGUAGES = [
   { code: "es", name: "Español", flag: "🇪🇸" },
   { code: "zh", name: "中文", flag: "🇨🇳" },
   { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "pt", name: "Português", flag: "🇧🇷" },
 ];
 
-const LOCALE_PREFIXES = ["es", "zh", "ar"];
+const LOCALE_PREFIXES = ["es", "zh", "ar", "pt"];
 
 // Pages that have localized versions
 const LOCALIZABLE_PATHS = [

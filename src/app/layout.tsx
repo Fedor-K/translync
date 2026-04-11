@@ -61,6 +61,7 @@ export const metadata: Metadata = {
       es: "https://translync.app/es",
       zh: "https://translync.app/zh",
       ar: "https://translync.app/ar",
+      pt: "https://translync.app/pt",
     },
   },
 };

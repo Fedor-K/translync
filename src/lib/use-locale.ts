@@ -108,19 +108,19 @@ export function useLocale() {
     const localeCookie = cookies.find((c) => c.startsWith(`${LOCALE_COOKIE}=`));
     if (localeCookie) {
       const val = localeCookie.split("=")[1];
-      if (["en", "es", "zh", "ar"].includes(val)) {
+      if (["en", "es", "zh", "ar", "pt"].includes(val)) {
         setLocale(val as Locale);
         return;
       }
     }
     // Fallback to browser language
     const browserLang = navigator.language.split("-")[0].toLowerCase();
-    if (["es", "zh", "ar"].includes(browserLang)) {
+    if (["es", "zh", "ar", "pt"].includes(browserLang)) {
       setLocale(browserLang as Locale);
     }
   }, []);
 
-  const t = locale === "en" ? null : TRANSLATIONS[locale as "es" | "zh" | "ar"];
+  const t = locale === "en" ? null : TRANSLATIONS[locale as "es" | "zh" | "ar" | "pt"];
 
   return {
     locale,

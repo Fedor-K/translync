@@ -2,7 +2,7 @@
 import { usePathname } from "next/navigation";
 import LanguageSwitcher from "./LanguageSwitcher";
 
-const LOCALE_PREFIXES = ["es", "zh", "ar"];
+const LOCALE_PREFIXES = ["es", "zh", "ar", "pt"];
 
 export default function Navbar() {
   const pathname = usePathname();

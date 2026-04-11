@@ -14,7 +14,7 @@ import SegmentCTA from "@/components/SegmentCTA";
 import SegmentGlossary from "@/components/SegmentGlossary";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
-const VALID_LOCALES = ["es", "zh", "ar"];
+const VALID_LOCALES = ["es", "zh", "ar", "pt"];
 
 interface Props {
   params: Promise<{ locale: string; segment: string }>;

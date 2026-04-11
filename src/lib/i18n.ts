@@ -1,4 +1,4 @@
-export const LOCALES = ["en", "es", "zh", "ar"] as const;
+export const LOCALES = ["en", "es", "zh", "ar", "pt"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const LOCALE_NAMES: Record<Locale, string> = {
@@ -6,6 +6,7 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   es: "Español",
   zh: "中文",
   ar: "العربية",
+  pt: "Português",
 };
 
 export const RTL_LOCALES: Locale[] = ["ar"];
@@ -188,7 +189,7 @@ interface TranslationSchema {
   };
 }
 
-export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
+export const TRANSLATIONS: Record<"es" | "zh" | "ar" | "pt", TranslationSchema> = {
   // ---------------------------------------------------------------------------
   // SPANISH — Latin American neutral
   // ---------------------------------------------------------------------------
@@ -1115,6 +1116,318 @@ export const TRANSLATIONS: Record<"es" | "zh" | "ar", TranslationSchema> = {
       sessionEndedSubtitle: "أنهى المتحدث البث. شكرًا لمشاركتك.",
       mute: "كتم الصوت",
       unmute: "إلغاء كتم الصوت",
+    },
+  },
+
+  // ---------------------------------------------------------------------------
+  // BRAZILIAN PORTUGUESE
+  // ---------------------------------------------------------------------------
+  pt: {
+    nav: {
+      howItWorks: "Como funciona",
+      pricing: "Preços",
+      faq: "Perguntas frequentes",
+      signIn: "Entrar",
+      startFree: "Comece grátis",
+    },
+    hero: {
+      title: "Tradução Simultânea com IA",
+      highlight: "para Todos os Eventos",
+      subtitle:
+        "Elimine as barreiras do idioma em conferências, cultos, salas de aula e encontros comunitários. Sem aplicativos, sem equipamentos extras — tradução instantânea com inteligência artificial.",
+      statLanguages: "Idiomas",
+      statLatency: "Latência",
+      statPrice: "Por hr / idioma",
+      ctaStart: "Comece grátis",
+      ctaHow: "Veja como funciona",
+    },
+    howItWorks: {
+      heading: "Pronto em 10 segundos",
+      subheading:
+        "Não precisa instalar nada nem configurar equipamentos. Em três passos simples, sua audiência ouve no próprio idioma.",
+      steps: [
+        {
+          title: "Crie uma transmissão",
+          description:
+            "Faça login, escolha os idiomas que precisa e crie seu canal de tradução em segundos.",
+        },
+        {
+          title: "Compartilhe o código QR",
+          description:
+            "Os participantes escaneiam o código com o celular — sem downloads, sem cadastro, sem complicação.",
+        },
+        {
+          title: "Fale naturalmente",
+          description:
+            "Nossa IA traduz sua voz em tempo real. Os participantes leem as legendas no idioma que escolherem.",
+        },
+      ],
+    },
+    features: {
+      heading: "Tudo o que você precisa. Nada além disso.",
+      subheading:
+        "Ferramentas poderosas projetadas para tornar a tradução ao vivo simples, precisa e acessível.",
+      items: [
+        {
+          title: "Mais de 70 idiomas",
+          description:
+            "Do português e mandarim a idiomas menos comuns — cobrimos praticamente qualquer audiência global.",
+        },
+        {
+          title: "Identificação de falantes",
+          description:
+            "Distingue automaticamente quem está falando para que as traduções reflitam cada voz com clareza.",
+        },
+        {
+          title: "Glossários especializados",
+          description:
+            "Adicione termos do seu segmento — médico, jurídico, religioso ou técnico — para traduções mais precisas.",
+        },
+        {
+          title: "Áudio em tempo real",
+          description:
+            "Captura o áudio diretamente do microfone do orador com latência ultrabaixa.",
+        },
+        {
+          title: "Compartilhamento por código QR",
+          description:
+            "Um único escaneamento conecta os participantes ao canal de tradução. Sem apps, sem senhas.",
+        },
+        {
+          title: "Tradução contextual",
+          description:
+            "A IA entende o contexto completo da conversa para oferecer traduções naturais, não literais.",
+        },
+      ],
+    },
+    pricing: {
+      heading: "Preços simples e transparentes",
+      subheading:
+        "Pague apenas pelo que usar. Sem contratos, sem surpresas, sem letras miúdas.",
+      example: "Evento de 1 hora em 3 idiomas = $9 no total",
+      plans: [
+        {
+          name: "Grátis",
+          price: "$0",
+          sub: "30 minutos incluídos",
+          features: [
+            "Até 2 idiomas",
+            "Legendas em tempo real",
+            "Compartilhamento por código QR",
+            "Sem cartão de crédito",
+          ],
+          cta: "Comece grátis",
+        },
+        {
+          name: "Pague por uso",
+          price: "$3",
+          sub: "por hora / idioma",
+          features: [
+            "Mais de 70 idiomas",
+            "Identificação de falantes",
+            "Glossários especializados",
+            "Histórico de transcrições",
+            "Suporte prioritário",
+          ],
+          cta: "Comece agora",
+        },
+        {
+          name: "Empresarial",
+          price: "Personalizado",
+          sub: "para organizações",
+          features: [
+            "Volume ilimitado",
+            "Faturamento centralizado",
+            "Gerente de conta dedicado",
+            "Acordo de nível de serviço (SLA)",
+            "Integrações sob medida",
+            "Onboarding assistido",
+          ],
+          cta: "Fale com vendas",
+        },
+      ],
+    },
+    faq: {
+      heading: "Perguntas frequentes",
+      subheading:
+        "Tudo o que você precisa saber sobre o Translync e a tradução ao vivo com IA.",
+      items: [
+        {
+          question: "Como o Translync funciona?",
+          answer:
+            "O Translync captura o áudio do orador em tempo real, transcreve e traduz para os idiomas selecionados usando inteligência artificial. Os participantes escaneiam um código QR e leem as legendas no próprio idioma, direto no celular.",
+        },
+        {
+          question: "Quantos idiomas estão disponíveis?",
+          answer:
+            "Atualmente oferecemos mais de 70 idiomas, incluindo português, inglês, espanhol, chinês, árabe, francês, hindi e muitos outros. Adicionamos novos idiomas continuamente.",
+        },
+        {
+          question: "Os participantes precisam instalar algum aplicativo?",
+          answer:
+            "Não. Basta escanear o código QR com a câmera do celular. A tradução abre direto no navegador — sem downloads, sem cadastro.",
+        },
+        {
+          question: "Qual é a precisão da tradução?",
+          answer:
+            "Nossa IA utiliza modelos de linguagem de última geração com compreensão contextual. A precisão é comparável à de um intérprete profissional na maioria dos casos, e melhora ainda mais com glossários personalizados.",
+        },
+        {
+          question: "Que qualidade de áudio é necessária?",
+          answer:
+            "Um microfone padrão é suficiente. Para melhores resultados, recomendamos um microfone de lapela ou de mesa em ambientes com ruído. O Translync também conta com filtros de ruído integrados.",
+        },
+        {
+          question: "Existe um teste gratuito?",
+          answer:
+            "Sim. Cada conta nova inclui 30 minutos gratuitos de tradução em até 2 idiomas. Não é necessário cartão de crédito. Ideal para testar o serviço antes do seu próximo evento.",
+        },
+      ],
+    },
+    cta: {
+      heading: "Quebre todas as barreiras do idioma",
+      subheading:
+        "Junte-se a milhares de organizadores que já usam o Translync para conectar audiências multilíngues no mundo todo.",
+      button: "Comece grátis",
+      note: "30 minutos grátis incluídos",
+    },
+    footer: {
+      product: "Produto",
+      solutions: "Soluções",
+      legal: "Jurídico",
+      privacyPolicy: "Política de privacidade",
+      termsOfService: "Termos de serviço",
+      contact: "Contato",
+      forChurches: "Para igrejas",
+      forNGOs: "Para ONGs",
+      forUniversities: "Para universidades",
+      forCommunities: "Para comunidades",
+      copyright: "Todos os direitos reservados.",
+      blog: "Blog",
+    },
+    login: {
+      title: "Entre no Translync",
+      subtitle:
+        "Insira seu e-mail para entrar ou criar uma conta.",
+      sendMagicLink: "Enviar link de acesso",
+      sending: "Enviando…",
+      checkEmail: "Verifique seu e-mail",
+      checkEmailDesc:
+        "Enviamos um link de acesso para você. Clique no link do e-mail para continuar.",
+      linkExpires: "O link expira em 15 minutos.",
+      differentEmail: "Usar outro e-mail",
+      noPassword: "Sem senhas — simples e seguro.",
+      backToHome: "Voltar ao início",
+    },
+    privacy:
+      "O Translync tem o compromisso de proteger sua privacidade. Coletamos apenas os dados necessários para oferecer o serviço de tradução. O áudio é processado em tempo real e não é armazenado permanentemente, a menos que você solicite. Não vendemos nem compartilhamos suas informações pessoais com terceiros. Consulte nossa política completa para mais detalhes.",
+    terms:
+      "Ao utilizar o Translync, você concorda com estes termos de serviço. O serviço é oferecido «como está» e nos reservamos o direito de modificar ou suspender funcionalidades com aviso prévio. Você é responsável pelo conteúdo traduzido por meio da plataforma. Para dúvidas jurídicas, entre em contato diretamente.",
+    blog: {
+      title: "Blog do Translync",
+      subtitle:
+        "Novidades, dicas e casos de uso sobre tradução com IA em tempo real.",
+      noPostsTitle: "Ainda não há publicações",
+      noPostsSubtitle:
+        "Estamos preparando conteúdo novo. Volte em breve para ler nossos primeiros artigos.",
+      minRead: "min de leitura",
+    },
+    breadcrumbs: {
+      home: "Início",
+    },
+    dashboard: {
+      title: "Painel de controle",
+      subtitle: "Gerencie suas transmissões de tradução ao vivo.",
+      newStream: "Nova transmissão",
+      yourStreams: "Suas transmissões",
+      sessionsTotal: "sessões no total",
+      noStreamsTitle: "Você ainda não tem transmissões",
+      noStreamsSubtitle: "Crie sua primeira transmissão para começar a traduzir ao vivo.",
+      createFirstStream: "Criar minha primeira transmissão",
+      createNewStream: "Criar nova transmissão",
+      usageThisMonth: "Uso neste mês",
+      minutes: "minutos",
+      sessions: "sessões",
+      freeTier: "Plano gratuito",
+      languagesThisMonth: "Idiomas neste mês",
+      noLanguagesYet: "Nenhum idioma ainda",
+      howItWorksTitle: "Como funciona?",
+      howItWorksSteps: [
+        "Crie uma transmissão e escolha os idiomas.",
+        "Compartilhe o código QR com sua audiência.",
+        "Fale naturalmente — a IA traduz em tempo real.",
+        "Os participantes leem as legendas no idioma deles.",
+      ],
+      learnMore: "Saiba mais",
+      signOut: "Sair",
+      newTranslationStream: "Nova transmissão de tradução",
+      sessionName: "Nome da sessão",
+      sessionNamePlaceholder: "Ex: Conferência de primavera",
+      sessionNameHint: "Um nome descritivo para identificar sua sessão.",
+      domain: "Domínio",
+      speakerLanguage: "Idioma do orador",
+      translateTo: "Traduzir para",
+      estimatedCost: "Custo estimado",
+      perHour: "por hora",
+      language: "idioma",
+      languages: "idiomas",
+      startTranslationSession: "Iniciar sessão de tradução",
+      freeMinutesNote: "Os primeiros 30 minutos são grátis.",
+      selectAtLeastOne: "Selecione pelo menos um idioma",
+      live: "Ao vivo",
+      ended: "Encerrada",
+      expired: "Expirada",
+      open: "Abrir",
+      copyLink: "Copiar link",
+      copied: "Copiado!",
+      qr: "QR",
+      remove: "Remover",
+      shareSession: "Compartilhar sessão",
+      downloadQR: "Baixar QR",
+    },
+    session: {
+      readyToStart: "Pronto para começar",
+      step1: "Permita o acesso ao microfone.",
+      step2: "Clique em «Iniciar tradução» para começar.",
+      step3: "Fale com clareza perto do microfone.",
+      step4: "Compartilhe o código QR com sua audiência.",
+      startTranslation: "Iniciar tradução",
+      micPermission: "Permissão do microfone",
+      connecting: "Conectando…",
+      hearingYou: "Estamos ouvindo você",
+      speakIntoMic: "Fale perto do microfone",
+      stopSession: "Parar sessão",
+      sessionEnded: "Sessão encerrada",
+      totalSegments: "Total de segmentos",
+      shareWithAudience: "Compartilhar com a audiência",
+      shareSubtitle: "Os participantes escaneiam o código QR para ler as legendas no idioma deles.",
+      preview: "Pré-visualização",
+      liveTranscript: "Transcrição ao vivo",
+      micBlocked: "Microfone bloqueado",
+      tryAgain: "Tentar novamente",
+      streamViaOBS: "Transmitir via OBS",
+      obsAlternative: "Alternativa: usar OBS Studio",
+      obsDescription: "Transmita o áudio do seu evento pelo OBS Studio em vez do microfone do navegador.",
+      obsRtmpUrl: "URL RTMP",
+      obsStreamKey: "Chave de transmissão",
+      obsCopy: "Copiar",
+      obsSetupTitle: "Configuração do OBS",
+      obsSteps: [
+        "Abra o OBS Studio e vá em Configurações → Transmissão.",
+        "Selecione «Personalizado» como serviço.",
+        "Cole a URL RTMP e a chave de transmissão.",
+        "Clique em «Iniciar transmissão» no OBS.",
+      ],
+      obsTip: "Dica: use uma fonte de áudio dedicada para obter a melhor qualidade de tradução.",
+    },
+    listen: {
+      selectLanguage: "Selecione seu idioma",
+      listening: "Ouvindo…",
+      waiting: "Aguardando o orador…",
+      sessionEndedTitle: "A sessão foi encerrada",
+      sessionEndedSubtitle: "O orador encerrou a transmissão. Obrigado por participar.",
+      mute: "Silenciar",
+      unmute: "Ativar som",
     },
   },
 };

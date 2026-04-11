@@ -40,11 +40,11 @@ export default function LocalizedFooter({
             <div>
               <h4 className="text-white text-sm font-semibold mb-3">{t.product}</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href={`${prefix}#how-it-works`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Cómo funciona" : t.product === "产品" ? "工作原理" : t.product === "المنتج" ? "كيف يعمل" : "How it works"}</a></li>
-                <li><a href={`${prefix}#pricing`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Precios" : t.product === "产品" ? "价格" : t.product === "المنتج" ? "الأسعار" : "Pricing"}</a></li>
-                <li><a href={`${prefix}#faq`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Preguntas frecuentes" : t.product === "产品" ? "常见问题" : t.product === "المنتج" ? "الأسئلة الشائعة" : "FAQ"}</a></li>
+                <li><a href={`${prefix}#how-it-works`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Cómo funciona" : t.product === "产品" ? "工作原理" : t.product === "المنتج" ? "كيف يعمل" : t.product === "Produto" ? "Como funciona" : "How it works"}</a></li>
+                <li><a href={`${prefix}#pricing`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Precios" : t.product === "产品" ? "价格" : t.product === "المنتج" ? "الأسعار" : t.product === "Produto" ? "Preços" : "Pricing"}</a></li>
+                <li><a href={`${prefix}#faq`} className="hover:text-white transition-colors">{t.product === "Producto" ? "Preguntas frecuentes" : t.product === "产品" ? "常见问题" : t.product === "المنتج" ? "الأسئلة الشائعة" : t.product === "Produto" ? "Perguntas frequentes" : "FAQ"}</a></li>
                 <li><a href="/blog" className="hover:text-white transition-colors">{t.blog}</a></li>
-                <li><a href="/translation" className="hover:text-white transition-colors">{t.product === "Producto" ? "Servicios de traducción" : t.product === "产品" ? "翻译服务" : t.product === "المنتج" ? "خدمات الترجمة" : "Translation Services"}</a></li>
+                <li><a href="/translation" className="hover:text-white transition-colors">{t.product === "Producto" ? "Servicios de traducción" : t.product === "产品" ? "翻译服务" : t.product === "المنتج" ? "خدمات الترجمة" : t.product === "Produto" ? "Serviços de tradução" : "Translation Services"}</a></li>
               </ul>
             </div>
             <div>
