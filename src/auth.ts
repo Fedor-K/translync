@@ -12,22 +12,22 @@ const config: NextAuthConfig = {
   adapter: UpstashRedisAdapter(redis),
   providers: [
     {
-      id: "resend",
+      id: "smtp2go",
       name: "Email",
       type: "email",
       maxAge: 60 * 10, // 10 min link validity
       sendVerificationRequest: async ({ identifier: email, url }) => {
-        const res = await fetch("https://api.resend.com/emails", {
+        const res = await fetch("https://api.smtp2go.com/v3/email/send", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Translync <noreply@translync.app>",
-            to: email,
+            api_key: process.env.SMTP2GO_API_KEY,
+            sender: "Translync <noreply@translync.app>",
+            to: [email],
             subject: "Sign in to Translync",
-            html: `
+            html_body: `
               <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 32px;">
                 <h2 style="color: #1e40af; margin-bottom: 8px;">Translync</h2>
                 <p style="color: #374151; font-size: 16px;">Click the button below to sign in:</p>
@@ -45,7 +45,12 @@ const config: NextAuthConfig = {
 
         if (!res.ok) {
           const body = await res.text();
-          throw new Error(`Resend error ${res.status}: ${body}`);
+          throw new Error(`SMTP2GO error ${res.status}: ${body}`);
+        }
+
+        const data = await res.json();
+        if (data.data?.error) {
+          throw new Error(`SMTP2GO error: ${data.data.error}`);
         }
       },
     },
