@@ -19,7 +19,7 @@ function LoginForm() {
 
     try {
       const { signIn } = await import("next-auth/react");
-      const result = await signIn("resend", { email, callbackUrl: "/dashboard", redirect: false });
+      const result = await signIn("smtp2go", { email, callbackUrl: "/dashboard", redirect: false });
       if (result?.error) {
         setError("Could not send magic link. Please try again.");
         setLoading(false);
