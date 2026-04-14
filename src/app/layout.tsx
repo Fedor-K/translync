@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import JsonLd from "@/components/JsonLd";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -76,14 +77,14 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q5KTGGYPVF" />
-        <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Q5KTGGYPVF');` }} />
       </head>
       <body className={inter.className}>
         <Providers>
           <JsonLd />
           {children}
         </Providers>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-Q5KTGGYPVF" strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Q5KTGGYPVF');` }} />
       </body>
     </html>
   );
