@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    optimizePackageImports: ["@/components", "@/lib"],
-  },
   async redirects() {
     return [
       { source: "/auth/signup", destination: "/login", permanent: true },
