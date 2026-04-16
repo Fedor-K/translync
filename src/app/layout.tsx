@@ -83,8 +83,8 @@ export default function RootLayout({
           <JsonLd />
           {children}
         </Providers>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-Q5KTGGYPVF" strategy="lazyOnload" />
-        <Script id="ga4-init" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Q5KTGGYPVF');` }} />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-Q5KTGGYPVF" strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Q5KTGGYPVF');` }} />
       </body>
     </html>
   );
