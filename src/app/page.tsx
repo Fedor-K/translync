@@ -7,9 +7,22 @@ import FAQ from "@/components/FAQ";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "How does it work?", acceptedAnswer: { "@type": "Answer", text: "Translync captures the speaker's audio through a browser microphone, transcribes it using AI speech recognition, translates the text into the target languages, and delivers the result as both text and synthesized audio to each listener's device — all in under 2 seconds." }},
+    { "@type": "Question", name: "What languages are supported?", acceptedAnswer: { "@type": "Answer", text: "We support 70+ languages including Spanish, French, German, Arabic, Mandarin, Japanese, Korean, Russian, Portuguese, Hindi, Swahili, and many more." }},
+    { "@type": "Question", name: "Do attendees need to install an app?", acceptedAnswer: { "@type": "Answer", text: "No. Attendees simply scan a QR code or tap a link. The translation opens directly in their phone's browser. No app store, no downloads, no accounts required." }},
+    { "@type": "Question", name: "How accurate is the translation?", acceptedAnswer: { "@type": "Answer", text: "For standard speech in common languages, accuracy is 90-95%. For specialized terminology, you can use built-in domain glossaries or upload your own custom glossary." }},
+    { "@type": "Question", name: "Is there a free trial?", acceptedAnswer: { "@type": "Answer", text: "Yes. Every account starts with 30 free minutes of translation per month — no credit card required." }},
+  ],
+};
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <Hero />
       <SocialProof />
 
