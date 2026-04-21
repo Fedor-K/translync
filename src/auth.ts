@@ -26,6 +26,8 @@ const config: NextAuthConfig = {
             api_key: process.env.SMTP2GO_API_KEY,
             sender: "Translync <noreply@translync.app>",
             to: [email],
+            track_clicks: false,
+            track_opens: false,
             subject: "Sign in to Translync",
             html_body: `
               <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 32px;">
