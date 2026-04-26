@@ -9,7 +9,6 @@ const redis = new Redis({
 });
 
 export async function GET(req: NextRequest) {
-  // Simple auth
   const authHeader = req.headers.get("authorization");
   const expectedKey = process.env.BLOG_API_KEY || "translync-blog-secret";
   if (authHeader !== `Bearer ${expectedKey}`) {
@@ -17,8 +16,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // NextAuth stores users with key pattern "user:*"
-    // Scan for all user keys
     const users: Record<string, unknown>[] = [];
     let cursor = 0;
 
@@ -27,9 +24,23 @@ export async function GET(req: NextRequest) {
       cursor = typeof nextCursor === "number" ? nextCursor : parseInt(nextCursor as string);
 
       for (const key of keys) {
-        const data = await redis.get(key);
-        if (data && typeof data === "object") {
-          users.push({ key, ...(data as Record<string, unknown>) });
+        try {
+          // Skip non-primary user keys (user:email:*, user:account:*, etc.)
+          if ((key as string).split(":").length > 2) continue;
+
+          const data = await redis.get(key);
+          if (data && typeof data === "object") {
+            users.push({ key, ...(data as Record<string, unknown>) });
+          } else if (data && typeof data === "string") {
+            try {
+              const parsed = JSON.parse(data);
+              users.push({ key, ...parsed });
+            } catch {
+              // skip non-JSON values
+            }
+          }
+        } catch {
+          // skip keys that error (wrong type)
         }
       }
     } while (cursor !== 0);
