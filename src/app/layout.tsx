@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import JsonLd from "@/components/JsonLd";
+import GA4UserTracker from "@/components/GA4UserTracker";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -81,6 +82,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <JsonLd />
+          <GA4UserTracker />
           {children}
         </Providers>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-Q5KTGGYPVF" strategy="afterInteractive" />
