@@ -76,6 +76,7 @@ export function addHeadingIds(content: string): string {
 
 export interface BlogPost {
   slug: string;
+  topicId?: string;
   title: string;
   content: string;
   excerpt: string;

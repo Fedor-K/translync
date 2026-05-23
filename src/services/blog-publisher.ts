@@ -26,6 +26,7 @@ export async function publishPost(post: BlogPost): Promise<void> {
   // Add to index
   const indexEntry = JSON.stringify({
     slug: post.slug,
+    topicId: post.topicId,
     title: post.title,
     excerpt: post.excerpt,
     coverImage: post.coverImage,
@@ -50,6 +51,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
 
 export interface PostSummary {
   slug: string;
+  topicId?: string;
   title: string;
   excerpt: string;
   coverImage?: string;
@@ -72,5 +74,6 @@ export async function listPosts(): Promise<PostSummary[]> {
 
 export async function listSlugs(): Promise<string[]> {
   const posts = await listPosts();
-  return posts.map((p) => p.slug);
+  // Return both topicIds and slugs for dedup matching
+  return posts.flatMap((p) => [p.slug, ...(p.topicId ? [p.topicId] : [])]);
 }

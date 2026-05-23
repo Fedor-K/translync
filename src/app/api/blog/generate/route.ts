@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateBlogContent } from "@/services/content-generator";
 import { processContent } from "@/services/content-processor";
 import { publishPost, listSlugs } from "@/services/blog-publisher";
-import { pickNextTopic } from "@/config/topics";
+import { pickNextTopic, topicId as getTopicId } from "@/config/topics";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     let keywords: string[];
     let category: string;
     let segment: string | undefined;
+    let seedTopicId: string | undefined;
 
     if (body.topic) {
       topic = body.topic;
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       keywords = next.keywords;
       category = next.category;
       segment = next.segment;
+      seedTopicId = getTopicId(next.topic);
     }
 
     // 1. Generate content via AI
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Process content (extract ToC, FAQ, meta, etc.)
     const post = processContent(title, content, keywords, category, segment);
+    if (seedTopicId) post.topicId = seedTopicId;
 
     // 3. Publish to Redis
     await publishPost(post);

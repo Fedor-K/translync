@@ -109,11 +109,16 @@ export const TOPIC_POOL: TopicSeed[] = [
   },
 ];
 
-// Pick a random unused topic (simple round-robin by index)
+// Stable ID from seed topic text (used for dedup instead of generated title slug)
+export function topicId(topicText: string): string {
+  return topicText.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+// Pick next unused topic — checks both topicId and slug against used list
 export function pickNextTopic(usedSlugs: string[]): TopicSeed | null {
   for (const topic of TOPIC_POOL) {
-    const slug = topic.topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    if (!usedSlugs.includes(slug)) {
+    const id = topicId(topic.topic);
+    if (!usedSlugs.includes(id)) {
       return topic;
     }
   }
