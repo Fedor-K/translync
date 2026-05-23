@@ -72,6 +72,28 @@ export async function listPosts(): Promise<PostSummary[]> {
     .filter((p): p is PostSummary => p !== null);
 }
 
+export async function deletePost(slug: string): Promise<boolean> {
+  // Remove from index
+  const existing = await redis("lrange", POSTS_INDEX_KEY, 0, -1);
+  let found = false;
+  if (Array.isArray(existing)) {
+    for (const raw of existing) {
+      try {
+        const entry = JSON.parse(raw);
+        if (entry.slug === slug) {
+          await redis("lrem", POSTS_INDEX_KEY, 0, raw);
+          found = true;
+        }
+      } catch {
+        // skip malformed
+      }
+    }
+  }
+  // Remove post data
+  await redis("del", `${POST_KEY_PREFIX}${slug}`);
+  return found;
+}
+
 export async function listSlugs(): Promise<string[]> {
   const posts = await listPosts();
   // Return both topicIds and slugs for dedup matching

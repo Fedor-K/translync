@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processContent } from "@/services/content-processor";
-import { publishPost } from "@/services/blog-publisher";
+import { publishPost, deletePost } from "@/services/blog-publisher";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +51,27 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     console.error("[blog:create]", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    const expectedKey = process.env.BLOG_API_KEY || "translync-blog-secret";
+    if (authHeader !== `Bearer ${expectedKey}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { slug } = await req.json();
+    if (!slug) {
+      return NextResponse.json({ error: "slug is required" }, { status: 400 });
+    }
+
+    const found = await deletePost(slug);
+    return NextResponse.json({ ok: true, deleted: found });
+  } catch (e) {
+    console.error("[blog:delete]", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
