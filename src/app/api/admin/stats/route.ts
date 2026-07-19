@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import { checkAdminAuth } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -32,85 +33,94 @@ async function scanKeys(match: string): Promise<string[]> {
 // Sort a count map into a descending [key, count] array.
 function topN(map: Record<string, number>, n = 10): Array<[string, number]> {
   return Object.entries(map)
+    .filter(([, v]) => v > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, n);
 }
 
-export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  const expectedKey = process.env.BLOG_API_KEY || "translync-blog-secret";
-  if (authHeader !== `Bearer ${expectedKey}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+// Coerce a Redis hash (values may come back as strings) to numbers.
+function toNumberMap(h: Record<string, unknown> | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!h) return out;
+  for (const [k, v] of Object.entries(h)) {
+    const n = typeof v === "number" ? v : parseInt(String(v), 10);
+    if (!Number.isNaN(n)) out[k] = n;
   }
+  return out;
+}
+
+// UTC date string (YYYY-MM-DD) offset by `daysAgo` from now.
+function dayKey(now: number, daysAgo: number): string {
+  return new Date(now - daysAgo * 86400_000).toISOString().slice(0, 10);
+}
+
+export async function GET(req: NextRequest) {
+  const authError = checkAdminAuth(req);
+  if (authError) return authError;
 
   try {
-    // 1. Registered users (primary user:* keys only, skip user:email:* etc.)
-    const userKeys = (await scanKeys("user:*")).filter(
-      (k) => k.split(":").length === 2
-    );
+    const now = Date.now();
+
+    // ── 1. Durable counters (authoritative all-time usage) ──────────────
+    // Written on every createSession(), never expire. Only count sessions
+    // created after this feature deployed.
+    const totalRaw = await redis.get("stats:sessions:total");
+    const allTimeSessions =
+      typeof totalRaw === "number" ? totalRaw : parseInt(String(totalRaw ?? 0), 10) || 0;
+
+    const last7Keys = Array.from({ length: 7 }, (_, i) => `stats:sessions:day:${dayKey(now, i)}`);
+    const last30Keys = Array.from({ length: 30 }, (_, i) => `stats:sessions:day:${dayKey(now, i)}`);
+    const sumDays = async (keys: string[]) => {
+      if (keys.length === 0) return 0;
+      const vals = await redis.mget<(number | string | null)[]>(...keys);
+      return (vals || []).reduce<number>((s, v) => s + (parseInt(String(v ?? 0), 10) || 0), 0);
+    };
+    const durableLast7d = await sumDays(last7Keys);
+    const durableLast30d = await sumDays(last30Keys);
+
+    const bySourceDurable = toNumberMap(await redis.hgetall("stats:sessions:by_source"));
+    const byTargetDurable = toNumberMap(await redis.hgetall("stats:sessions:by_target"));
+    const byDomainDurable = toNumberMap(await redis.hgetall("stats:sessions:by_domain"));
+
+    // ── 2. Registered users ─────────────────────────────────────────────
+    const userKeys = (await scanKeys("user:*")).filter((k) => k.split(":").length === 2);
     const registeredUsers = userKeys.length;
 
-    // 2. Session history from user:{uid}:sessions lists (30-day retention).
-    //    Covers both registered (uuid) and anonymous (u_...) creators.
+    // ── 3. Per-user attribution (user:*:sessions, ~30-day retention) ─────
     const sessionListKeys = await scanKeys("user:*:sessions");
-
-    let totalSessions = 0;
-    let sessionsLast7d = 0;
-    let sessionsLast30d = 0;
+    let attributedSessions = 0;
     let registeredCreators = 0;
     let anonymousCreators = 0;
-    const bySourceLang: Record<string, number> = {};
-    const byTargetLang: Record<string, number> = {};
-    const byDomain: Record<string, number> = {};
-
-    const now = Date.now();
-    const day = 86400_000;
 
     for (const key of sessionListKeys) {
-      const parts = key.split(":");
-      const uid = parts[1] || "";
+      const uid = key.split(":")[1] || "";
       const raw = await redis.lrange(key, 0, -1);
       if (!Array.isArray(raw) || raw.length === 0) continue;
 
-      let creatorHasSession = false;
+      let hasSession = false;
       for (const item of raw) {
         let meta: SessionMeta | null = null;
         try {
-          meta =
-            typeof item === "string"
-              ? (JSON.parse(item) as SessionMeta)
-              : (item as SessionMeta);
+          meta = typeof item === "string" ? (JSON.parse(item) as SessionMeta) : (item as SessionMeta);
         } catch {
           continue;
         }
         if (!meta || !meta.id) continue;
-
-        creatorHasSession = true;
-        totalSessions++;
-        if (typeof meta.createdAt === "number") {
-          if (now - meta.createdAt <= 7 * day) sessionsLast7d++;
-          if (now - meta.createdAt <= 30 * day) sessionsLast30d++;
-        }
-        if (meta.sourceLanguage) {
-          bySourceLang[meta.sourceLanguage] =
-            (bySourceLang[meta.sourceLanguage] || 0) + 1;
-        }
-        for (const t of meta.targetLanguages || []) {
-          byTargetLang[t] = (byTargetLang[t] || 0) + 1;
-        }
-        const d = meta.domain || "general";
-        byDomain[d] = (byDomain[d] || 0) + 1;
+        hasSession = true;
+        attributedSessions++;
       }
-
-      if (creatorHasSession) {
+      if (hasSession) {
         if (uid.startsWith("u_")) anonymousCreators++;
         else registeredCreators++;
       }
     }
 
-    // 3. Live sessions (session:* keys, 24h TTL) — active count, duration, peak listeners.
+    // ── 4. Live/started session objects (session:* keys) ────────────────
+    // NOTE: server-side updates currently SET without KEEPTTL, so these keys
+    // lose their 24h TTL and accumulate. Treat this as "started sessions seen"
+    // (all-time, approximate), not a 24h window.
     const liveKeys = await scanKeys("session:*");
-    let liveSessionsTracked = 0;
+    let startedSessionsSeen = 0;
     let activeSessions = 0;
     let totalDurationMs = 0;
     let sessionsWithDuration = 0;
@@ -130,7 +140,7 @@ export async function GET(req: NextRequest) {
       }
       if (!s) continue;
 
-      liveSessionsTracked++;
+      startedSessionsSeen++;
       if (s.active) activeSessions++;
       if (typeof s.durationMs === "number" && s.durationMs > 0) {
         totalDurationMs += s.durationMs;
@@ -144,30 +154,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       registeredUsers,
       usage: {
-        totalSessions,
-        sessionsLast7d,
-        sessionsLast30d,
+        allTimeSessions,
+        sessionsLast7d: durableLast7d,
+        sessionsLast30d: durableLast30d,
         registeredCreators,
         anonymousCreators,
+        attributedSessions,
         activationRate:
           registeredUsers > 0
             ? Math.round((registeredCreators / registeredUsers) * 100) / 100
             : 0,
+        note: "allTimeSessions/last7d/last30d come from durable counters and only include sessions created after this feature deployed. attributedSessions is the older list-based figure (~30-day retention, web route only).",
       },
-      live: {
-        note: "Live session objects expire after 24h; duration/listeners reflect only the last 24h.",
-        liveSessionsTracked,
+      sessionObjects: {
+        note: "session:* objects currently accumulate (server SET drops the 24h TTL), so these are all-time 'started/used' figures, not a 24h window.",
+        startedSessionsSeen,
         activeSessions,
-        totalMinutesLast24h: Math.round(totalDurationMs / 60000),
         sessionsWithDuration,
+        totalMinutes: Math.round(totalDurationMs / 60000),
         peakListenersMax,
       },
       breakdown: {
-        topSourceLanguages: topN(bySourceLang),
-        topTargetLanguages: topN(byTargetLang),
-        topDomains: topN(byDomain),
+        topSourceLanguages: topN(bySourceDurable),
+        topTargetLanguages: topN(byTargetDurable),
+        topDomains: topN(byDomainDurable),
       },
-      note: "Session history retained ~30 days (user:*:sessions); older sessions are not counted.",
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
