@@ -53,6 +53,23 @@ export async function createSession(
   // Store session for 24 hours
   await redis("set", `session:${id}`, JSON.stringify(session));
   await redis("expire", `session:${id}`, 86400);
+
+  // Durable, never-expiring usage counters. This is the single creation
+  // chokepoint for every session, so these counts stay accurate regardless
+  // of per-user attribution or the 24h TTL on session:* objects.
+  try {
+    const day = new Date(session.createdAt).toISOString().slice(0, 10); // YYYY-MM-DD
+    await redis("incr", "stats:sessions:total");
+    await redis("incr", `stats:sessions:day:${day}`);
+    await redis("hincrby", "stats:sessions:by_source", sourceLanguage, 1);
+    for (const t of targetLanguages) {
+      await redis("hincrby", "stats:sessions:by_target", t, 1);
+    }
+    await redis("hincrby", "stats:sessions:by_domain", domain || "general", 1);
+  } catch {
+    // Stats are best-effort — never block session creation on a counter write.
+  }
+
   return session;
 }
 

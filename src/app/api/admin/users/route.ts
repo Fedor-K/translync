@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import { checkAdminAuth } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,11 +10,8 @@ const redis = new Redis({
 });
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  const expectedKey = process.env.BLOG_API_KEY || "translync-blog-secret";
-  if (authHeader !== `Bearer ${expectedKey}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = checkAdminAuth(req);
+  if (authError) return authError;
 
   try {
     const users: Record<string, unknown>[] = [];
