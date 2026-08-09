@@ -92,6 +92,33 @@ export async function setSessionInactive(sessionId: string): Promise<void> {
   );
 }
 
+// Durable, never-expiring counters of real audio processed (milliseconds).
+// Written live as audio streams, so "minutes of translation" is accurate and
+// available during a session — not only on a clean disconnect.
+export async function incrAudioMs(deltaMs: number, day: string): Promise<void> {
+  const delta = Math.round(deltaMs);
+  if (delta <= 0) return;
+  await redis.incrby("stats:audio:ms:total", delta);
+  await redis.incrby(`stats:audio:ms:day:${day}`, delta);
+}
+
+// Live-update a session's translated duration from real audio streamed.
+// Uses KEEPTTL so the 24h TTL on the session object is preserved (a plain SET
+// would clear it — the cause of session:* keys never expiring).
+export async function setSessionAudioDurationMs(
+  sessionId: string,
+  durationMs: number
+): Promise<void> {
+  const session = await getSession(sessionId);
+  if (!session) return;
+  session.durationMs = Math.round(durationMs);
+  await redis.set(
+    `session:${sessionId.toUpperCase()}`,
+    JSON.stringify(session),
+    "KEEPTTL"
+  );
+}
+
 // Listener tracking per session
 const LISTENER_KEY_PREFIX = "listeners:";
 
