@@ -78,6 +78,17 @@ export async function GET(req: NextRequest) {
     const durableLast7d = await sumDays(last7Keys);
     const durableLast30d = await sumDays(last30Keys);
 
+    // Real audio processed (live durable counters written by the RT server).
+    const audioMsRaw = await redis.get("stats:audio:ms:total");
+    const audioMsTotal =
+      typeof audioMsRaw === "number" ? audioMsRaw : parseInt(String(audioMsRaw ?? 0), 10) || 0;
+    const audioMs7d = await sumDays(
+      Array.from({ length: 7 }, (_, i) => `stats:audio:ms:day:${dayKey(now, i)}`)
+    );
+    const audioMs30d = await sumDays(
+      Array.from({ length: 30 }, (_, i) => `stats:audio:ms:day:${dayKey(now, i)}`)
+    );
+
     const bySourceDurable = toNumberMap(await redis.hgetall("stats:sessions:by_source"));
     const byTargetDurable = toNumberMap(await redis.hgetall("stats:sessions:by_target"));
     const byDomainDurable = toNumberMap(await redis.hgetall("stats:sessions:by_domain"));
@@ -165,6 +176,12 @@ export async function GET(req: NextRequest) {
             ? Math.round((registeredCreators / registeredUsers) * 100) / 100
             : 0,
         note: "allTimeSessions/last7d/last30d come from durable counters and only include sessions created after this feature deployed. attributedSessions is the older list-based figure (~30-day retention, web route only).",
+      },
+      translationMinutes: {
+        allTime: Math.round(audioMsTotal / 60000),
+        last7d: Math.round(audioMs7d / 60000),
+        last30d: Math.round(audioMs30d / 60000),
+        note: "Real audio processed, counted live from PCM bytes on the RT server (updates during active sessions). Only counts audio streamed after this feature deployed to the RT server.",
       },
       sessionObjects: {
         note: "session:* objects currently accumulate (server SET drops the 24h TTL), so these are all-time 'started/used' figures, not a 24h window.",

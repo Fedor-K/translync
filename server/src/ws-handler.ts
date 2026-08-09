@@ -8,6 +8,8 @@ import {
   publishTranslation,
   setSessionInactive,
   setSessionStarted,
+  incrAudioMs,
+  setSessionAudioDurationMs,
 } from "./redis.js";
 
 export async function handleAudioWebSocket(
@@ -102,6 +104,32 @@ export async function handleAudioWebSocket(
   await setSessionStarted(sessionId);
   await dg.start();
 
+  // Live audio-duration accounting. Incoming audio is linear16 mono PCM, so
+  // each byte-pair is one sample: seconds = bytes / (sampleRate * 2).
+  const bytesPerSecond = sampleRate * 2;
+  let audioMsTotal = 0; // real audio streamed this session
+  let audioMsFlushed = 0; // already persisted to Redis
+  const FLUSH_EVERY_MS = 10_000; // persist per ~10s of audio to limit writes
+  let flushing = false;
+
+  async function flushAudioMs(final = false): Promise<void> {
+    if (flushing && !final) return;
+    const delta = Math.round(audioMsTotal - audioMsFlushed);
+    if (delta <= 0) return;
+    flushing = true;
+    audioMsFlushed += delta;
+    try {
+      const day = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+      await incrAudioMs(delta, day);
+      await setSessionAudioDurationMs(sessionId, audioMsTotal);
+    } catch (err) {
+      console.error(`[ws] audio-ms flush failed for ${sessionId}:`, err);
+      audioMsFlushed -= delta; // retry the delta on the next flush
+    } finally {
+      flushing = false;
+    }
+  }
+
   // Forward audio from WebSocket to Deepgram
   let msgCount = 0;
   ws.on("message", (data: Buffer) => {
@@ -112,6 +140,10 @@ export async function handleAudioWebSocket(
     if (msgCount % 100 === 0) {
       console.log(`[ws] Audio chunks received: ${msgCount}`);
     }
+    audioMsTotal += (data.byteLength / bytesPerSecond) * 1000;
+    if (audioMsTotal - audioMsFlushed >= FLUSH_EVERY_MS) {
+      void flushAudioMs();
+    }
     dg.send(data);
   });
 
@@ -121,6 +153,9 @@ export async function handleAudioWebSocket(
     clearContext(sessionId);
     clearSessionDomain(sessionId);
     await setSessionInactive(sessionId);
+    // Persist any remaining audio and set the session's real translated
+    // duration (overrides the wall-clock value from setSessionInactive).
+    await flushAudioMs(true);
 
     // Notify listeners that session ended
     for (const lang of [...targetLangs, sourceLang]) {
