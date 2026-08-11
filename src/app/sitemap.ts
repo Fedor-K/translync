@@ -1,8 +1,14 @@
 import { MetadataRoute } from "next";
 import { getAllSlugs } from "@/lib/programmatic-seo";
 import { COMPETITOR_SLUGS } from "@/lib/competitors";
+import { listPosts } from "@/services/blog-publisher";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Blog posts are published continuously through /api/blog/create, so a sitemap
+// frozen at build time would hide every post until the next deploy. Revalidate
+// hourly instead.
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://translync.app";
   const locales = ["es", "zh", "ar", "pt"];
   const segments = ["churches", "ngos", "universities", "communities"];
@@ -50,6 +56,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
   entries.push({ url: `${base}/translation`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 });
   for (const slug of getAllSlugs()) {
     entries.push({ url: `${base}/translation/${slug}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 });
+  }
+
+  // Blog posts — the same set /blog lists. Without these, published posts are
+  // only discoverable by crawling the index page, which slows indexing badly.
+  // Non-fatal: a storage hiccup must not take down the whole sitemap.
+  try {
+    for (const post of await listPosts()) {
+      if (!post.slug) continue;
+      const published = post.publishedAt ? new Date(post.publishedAt) : null;
+      const lastModified =
+        published && !Number.isNaN(published.getTime()) ? published : new Date();
+      entries.push({
+        url: `${base}/blog/${post.slug}`,
+        lastModified,
+        changeFrequency: "monthly",
+        priority: 0.7,
+      });
+    }
+  } catch {
+    // Keep the rest of the sitemap rather than failing the route.
   }
 
   return entries;
