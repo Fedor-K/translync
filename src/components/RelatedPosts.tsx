@@ -52,13 +52,19 @@ export default async function RelatedPosts({
     return needles.reduce((n, needle) => n + (haystack.includes(needle) ? 1 : 0), 0);
   };
 
-  // Relevant posts first, newest among them. The remaining slots are filled from
-  // a rotating offset keyed to this host page, so twelve pages showing four posts
-  // each cover the archive instead of all pointing at the newest four.
-  const relevant = byDate.filter((p) => relevance(p) > 0);
-  const rest = byDate.filter((p) => relevance(p) === 0);
-  const chosen = relevant.slice(0, limit);
-  if (chosen.length < limit && rest.length > 0) {
+  // Half the slots go to posts about this page's subject, newest first. The other
+  // half rotate through the whole archive from an offset keyed to the host page.
+  //
+  // The cap on the relevant half is the part that matters. Without it, every page
+  // mentioning churches filled all four slots with the same church posts, and six
+  // posts ended up linked from nowhere but the blog index — including the two
+  // Google had already declined to fetch. Relevance decides what a reader sees
+  // first; the rotation makes sure nothing is orphaned.
+  const relevantSlots = Math.max(1, Math.ceil(limit / 2));
+  const chosen = byDate.filter((p) => relevance(p) > 0).slice(0, relevantSlots);
+  const taken = new Set(chosen.map((p) => p.slug));
+  const rest = byDate.filter((p) => !taken.has(p.slug));
+  if (rest.length > 0) {
     const start = hash(`${heading}|${match.join(",")}`) % rest.length;
     for (let i = 0; i < rest.length && chosen.length < limit; i++) {
       chosen.push(rest[(start + i) % rest.length]);
