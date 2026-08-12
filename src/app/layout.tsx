@@ -56,15 +56,11 @@ export const metadata: Metadata = {
       "AI-powered live translation in 70+ languages. No hardware. From $3/hour.",
     images: ["https://translync.app/og-image.png"],
   },
+  // NOTE: this canonical is inherited by every page that does not declare its
+  // own, which silently points them at the homepage. Any new route needs its own
+  // `alternates.canonical`.
   alternates: {
     canonical: "https://translync.app",
-    languages: {
-      en: "https://translync.app",
-      es: "https://translync.app/es",
-      zh: "https://translync.app/zh",
-      ar: "https://translync.app/ar",
-      pt: "https://translync.app/pt",
-    },
   },
 };
 

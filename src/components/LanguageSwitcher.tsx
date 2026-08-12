@@ -1,7 +1,13 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import type { Locale } from "@/lib/i18n";
 import { setLocaleCookie } from "@/lib/use-locale";
+
+// This switches the APP's interface language — dashboard, session, listen — which
+// has always been driven by a cookie. It used to navigate to /es, /zh, /ar, /pt as
+// well, because the marketing pages had translated copies at those URLs. Those
+// copies are gone: Google indexed them and showed them to nobody for 28 days. So
+// the switcher no longer produces links, it sets the cookie and reloads in place.
 
 const LANGUAGES = [
   { code: "en", name: "English", flag: "🇬🇧" },
@@ -11,50 +17,9 @@ const LANGUAGES = [
   { code: "pt", name: "Português", flag: "🇧🇷" },
 ];
 
-const LOCALE_PREFIXES = ["es", "zh", "ar", "pt"];
-
-// Pages that have localized versions
-const LOCALIZABLE_PATHS = [
-  "", // homepage
-  "/for/churches",
-  "/for/ngos",
-  "/for/universities",
-  "/for/communities",
-  "/zoom-interpretation-alternative",
-];
-
-function getLocaleHref(targetLocale: string, currentPath: string): string {
-  // Strip current locale prefix from path
-  let cleanPath = currentPath;
-  for (const prefix of LOCALE_PREFIXES) {
-    if (cleanPath === `/${prefix}` || cleanPath.startsWith(`/${prefix}/`)) {
-      cleanPath = cleanPath.slice(prefix.length + 1) || "/";
-      break;
-    }
-  }
-
-  // Normalize
-  if (cleanPath === "/") cleanPath = "";
-
-  // Check if this path has a localized version
-  const isLocalizable = LOCALIZABLE_PATHS.includes(cleanPath);
-
-  if (targetLocale === "en") {
-    return cleanPath || "/";
-  }
-
-  if (isLocalizable) {
-    return `/${targetLocale}${cleanPath}`;
-  }
-
-  // For non-localizable pages (blog, translation, etc.), go to locale homepage
-  return `/${targetLocale}`;
-}
-
 export default function LanguageSwitcher({ current = "en" }: { current?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
 
   const currentLang = LANGUAGES.find((l) => l.code === current) || LANGUAGES[0];
 
@@ -93,15 +58,21 @@ export default function LanguageSwitcher({ current = "en" }: { current?: string 
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 min-w-[150px]" style={{ backgroundColor: "#ffffff" }}>
             {LANGUAGES.map((lang) => (
-              <a
+              <button
                 key={lang.code}
-                href={getLocaleHref(lang.code, pathname)}
-                className={`flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
+                type="button"
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
                   lang.code === current
                     ? "bg-blue-50 text-blue-700 font-semibold"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
-                onClick={() => { setLocaleCookie(lang.code as "en" | "es" | "zh" | "ar"); setOpen(false); }}
+                onClick={() => {
+                  setLocaleCookie(lang.code as Locale);
+                  setOpen(false);
+                  // useLocale() reads the cookie on mount, so the interface picks
+                  // the new language up on the next render pass.
+                  window.location.reload();
+                }}
               >
                 <span>{lang.flag}</span>
                 <span>{lang.name}</span>
@@ -110,7 +81,7 @@ export default function LanguageSwitcher({ current = "en" }: { current?: string 
                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                   </svg>
                 )}
-              </a>
+              </button>
             ))}
           </div>
         </>

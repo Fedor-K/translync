@@ -1,5 +1,3 @@
-import LanguageSwitcher from "./LanguageSwitcher";
-
 export default function Hero() {
   return (
     <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 text-white overflow-hidden">
@@ -28,7 +26,6 @@ export default function Hero() {
         </div>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher current="en" />
           <a
             href="/login"
             className="hidden sm:inline-block text-sm text-blue-200 hover:text-white transition-colors"

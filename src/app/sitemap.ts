@@ -10,7 +10,6 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://translync.app";
-  const locales = ["es", "zh", "ar", "pt"];
   const segments = ["churches", "ngos", "universities", "communities"];
 
   const entries: MetadataRoute.Sitemap = [
@@ -27,18 +26,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push({ url: `${base}/for/${seg}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 });
   }
 
-  // Localized homepages
-  for (const locale of locales) {
-    entries.push({ url: `${base}/${locale}`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 });
-  }
-
-  // Localized segment pages
-  for (const locale of locales) {
-    for (const seg of segments) {
-      entries.push({ url: `${base}/${locale}/for/${seg}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 });
-    }
-  }
-
   // Comparison pages
   entries.push({ url: `${base}/vs`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 });
   for (const comp of COMPETITOR_SLUGS) {
@@ -46,11 +33,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   entries.push({ url: `${base}/best-church-translation-app`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 });
   entries.push({ url: `${base}/zoom-interpretation-alternative`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 });
-
-  // Localized Zoom pages
-  for (const locale of locales) {
-    entries.push({ url: `${base}/${locale}/zoom-interpretation-alternative`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 });
-  }
 
   // Programmatic SEO pages
   entries.push({ url: `${base}/translation`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 });

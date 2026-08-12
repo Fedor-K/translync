@@ -3,6 +3,10 @@ import { type Locale, LOCALES } from "./i18n";
 /**
  * Get user's preferred locale from cookie or Accept-Language header.
  * Returns "en" if no match found.
+ *
+ * Currently unused: its only caller was the translated marketing routes, which
+ * have been removed. Kept because the app's own interface is still multilingual
+ * and server-side detection is the natural way to pick its default.
  */
 export function detectLocale(cookieValue?: string, acceptLanguage?: string): Locale {
   // 1. Check cookie first (user's explicit choice)
