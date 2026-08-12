@@ -4,10 +4,14 @@ import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import RelatedPosts from "@/components/RelatedPosts";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
+
+// Links to continuously-published blog posts, so rebuild hourly.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -162,6 +166,12 @@ export default async function ProgrammaticPage({ params }: Props) {
             ))}
           </div>
         </section>
+
+        <RelatedPosts
+          match={[page.eventType.toLowerCase(), page.plural.toLowerCase()]}
+          heading={`Guides on ${page.eventType.toLowerCase()} translation`}
+          limit={4}
+        />
 
         {/* CTA */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-8 text-center text-white">

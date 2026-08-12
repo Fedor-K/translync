@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 import { getAllSlugs } from "@/lib/programmatic-seo";
 import { COMPETITOR_SLUGS } from "@/lib/competitors";
-import { listPosts } from "@/services/blog-publisher";
+import { safeListPosts } from "@/lib/posts-safe";
 
 // Blog posts are published continuously through /api/blog/create, so a sitemap
 // frozen at build time would hide every post until the next deploy. Revalidate
@@ -42,22 +42,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Blog posts — the same set /blog lists. Without these, published posts are
   // only discoverable by crawling the index page, which slows indexing badly.
-  // Non-fatal: a storage hiccup must not take down the whole sitemap.
-  try {
-    for (const post of await listPosts()) {
-      if (!post.slug) continue;
-      const published = post.publishedAt ? new Date(post.publishedAt) : null;
-      const lastModified =
-        published && !Number.isNaN(published.getTime()) ? published : new Date();
-      entries.push({
-        url: `${base}/blog/${post.slug}`,
-        lastModified,
-        changeFrequency: "monthly",
-        priority: 0.7,
-      });
-    }
-  } catch {
-    // Keep the rest of the sitemap rather than failing the route.
+  // safeListPosts bounds the wait: an unreachable store must not hang the route,
+  // which a plain try/catch does not prevent.
+  for (const post of await safeListPosts()) {
+    if (!post.slug) continue;
+    const published = post.publishedAt ? new Date(post.publishedAt) : null;
+    const lastModified =
+      published && !Number.isNaN(published.getTime()) ? published : new Date();
+    entries.push({
+      url: `${base}/blog/${post.slug}`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
   }
 
   return entries;

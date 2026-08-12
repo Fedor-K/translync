@@ -6,6 +6,12 @@ import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
+import RelatedPosts from "@/components/RelatedPosts";
+
+// The homepage is what Google crawls most often, which makes it the most valuable
+// place to link posts from. That means reading them at request time; hourly
+// revalidation keeps the page static-fast while the links stay current.
+export const revalidate = 3600;
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -57,6 +63,11 @@ export default function Home() {
       <Features />
       <Pricing />
       <FAQ />
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-6">
+          <RelatedPosts heading="Guides for event organizers" limit={6} />
+        </div>
+      </section>
       <CTA />
       <Footer />
     </main>

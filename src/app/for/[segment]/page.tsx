@@ -12,10 +12,15 @@ import SegmentFAQ from "@/components/SegmentFAQ";
 import SegmentCTA from "@/components/SegmentCTA";
 import SegmentGlossary from "@/components/SegmentGlossary";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import RelatedPosts from "@/components/RelatedPosts";
 
 interface Props {
   params: Promise<{ segment: string }>;
 }
+
+// This page now links to blog posts, which are published continuously. Rebuild
+// hourly so the links reflect what exists, not what existed at the last deploy.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return SEGMENT_SLUGS.map((segment) => ({ segment }));
@@ -53,6 +58,13 @@ export default async function SegmentPage({ params }: Props) {
       <SegmentTestimonial testimonial={data.testimonial} />
       <Pricing />
       <SegmentFAQ faqs={data.faq} />
+      <div className="max-w-5xl mx-auto px-6 pt-12">
+        <RelatedPosts
+          match={[segment, segment.replace(/s$/, ""), data.label.toLowerCase()]}
+          heading={`Guides for ${data.label.toLowerCase()}`}
+          limit={4}
+        />
+      </div>
       <SegmentCTA cta={data.cta} />
       <Footer />
     </main>
