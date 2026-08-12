@@ -12,9 +12,10 @@
  * multiplying URLs. Languages now appear as content on the page, which is where
  * a reader wanted them anyway.
  *
- * The event axis was cut too, to the seven event types with measurable demand.
- * Keyword Planner reports the other eight at zero, and a page targeting a phrase
- * nobody searches cannot earn traffic however well it is written.
+ * The event axis was cut twice. First to the seven types with measurable demand,
+ * since a page aimed at a phrase nobody searches cannot earn traffic however well
+ * it is written. Then to two, once what a customer is worth entered the ranking —
+ * see EVENT_TYPES for the figures.
  *
  * Every retired URL 301s — see LEGACY_REDIRECTS, consumed by next.config.ts.
  */
@@ -28,6 +29,9 @@ export interface ProgrammaticPage {
   slug: string;
   eventType: string;
   plural: string;
+  /** The phrase this page leads with — the head of its keyword cluster, which is
+   *  not necessarily the phrase the slug happens to contain. */
+  headTerm: string;
   /** Monthly searches for this page's target phrase, per Keyword Planner. */
   demand: number;
   title: string;
@@ -41,27 +45,67 @@ export interface ProgrammaticPage {
   cta: string;
 }
 
-/** Event types that survived the demand check, with their measured volume. */
+/**
+ * The two segments the site is focused on, with the demand of their whole keyword
+ * cluster rather than of one phrase.
+ *
+ * Seven event types survived the first cut, chosen on search volume. Adding what
+ * a customer is worth changed the answer: a church translates every Sunday and is
+ * worth ~$608 a year, a conference organizer comes back through a season at ~$162,
+ * and a wedding pays $14 once. Estimated annual revenue across the seven ran
+ * $14,762 for church and $9,623 for conference, then fell to $73 and below for
+ * everything else — two orders of magnitude, not a close call.
+ *
+ * Note the conference figure comes from the head of its cluster, "conference
+ * interpretation" at 210/mo, not from "conference translation" at 40/mo. Judging
+ * the segment by the single phrase in its slug undersold it by five times.
+ */
 const EVENT_TYPES = [
-  { id: "wedding", name: "Wedding", plural: "weddings", demand: 50 },
-  { id: "conference", name: "Conference", plural: "conferences", demand: 40 },
-  { id: "summit", name: "International Summit", plural: "international summits", demand: 30 },
-  { id: "church-service", name: "Church Service", plural: "church services", demand: 10 },
-  { id: "workshop", name: "Workshop", plural: "workshops", demand: 10 },
-  { id: "seminar", name: "Seminar", plural: "seminars", demand: 10 },
-  { id: "town-hall", name: "Town Hall Meeting", plural: "town hall meetings", demand: 10 },
+  {
+    id: "church-service",
+    name: "Church Service",
+    plural: "church services",
+    demand: 270,
+    // The phrase to lead with, which is not always the one in the slug. The slug
+    // is fixed by what Google already has indexed; the title is not.
+    headTerm: "Church Translation",
+  },
+  {
+    id: "conference",
+    name: "Conference",
+    plural: "conferences",
+    demand: 660,
+    // "conference interpretation" is searched 210 times a month; "conference
+    // translation", which this page was titled for, 40. Same page, same content,
+    // five times the demand — the slug was quietly deciding the target.
+    headTerm: "Conference Interpretation",
+  },
 ];
 
-/** Event types retired for zero measured demand. Their URLs redirect to the hub. */
-const RETIRED_EVENT_IDS = [
-  "medical-conference",
-  "legal-seminar",
-  "university-lecture",
-  "ngo-training",
-  "corporate-meeting",
-  "startup-pitch",
-  "religious-gathering",
-  "community-event",
+/**
+ * Retired event types, and where each one goes.
+ *
+ * Everything that is still an event with an audience folds into the conference
+ * page, which now covers that ground. Weddings do not: a wedding is neither a
+ * conference nor a repeat customer, so it goes to the hub rather than pretending
+ * to be served by a page about conferences.
+ */
+const RETIRED: { id: string; to: string }[] = [
+  // Cut in this pass: real search volume, but customers who pay once or not much.
+  { id: "wedding", to: "/translation" },
+  { id: "summit", to: "/translation/conference-translation" },
+  { id: "workshop", to: "/translation/conference-translation" },
+  { id: "seminar", to: "/translation/conference-translation" },
+  { id: "town-hall", to: "/translation/conference-translation" },
+  // Cut earlier for zero measured demand.
+  { id: "medical-conference", to: "/translation/conference-translation" },
+  { id: "legal-seminar", to: "/translation/conference-translation" },
+  { id: "university-lecture", to: "/translation/conference-translation" },
+  { id: "ngo-training", to: "/translation/conference-translation" },
+  { id: "corporate-meeting", to: "/translation/conference-translation" },
+  { id: "startup-pitch", to: "/translation/conference-translation" },
+  { id: "religious-gathering", to: "/translation/church-service-translation" },
+  { id: "community-event", to: "/translation/conference-translation" },
 ];
 
 /**
@@ -81,10 +125,11 @@ function generatePage(event: (typeof EVENT_TYPES)[number]): ProgrammaticPage {
     slug: `${event.id}-translation`,
     eventType: event.name,
     plural: event.plural,
+    headTerm: event.headTerm,
     demand: event.demand,
-    title: `${event.name} Translation — Live in 70+ Languages | Translync`,
-    metaDescription: `Real-time translation for ${event.plural}. Attendees scan a QR code and listen in their own language on their phone. No interpreters, no headsets, $3 per hour.`,
-    h1: `${event.name} Translation`,
+    title: `${event.headTerm} — Live in 70+ Languages | Translync`,
+    metaDescription: `${event.headTerm} in real time for ${event.plural}. Attendees scan a QR code and listen in their own language on their phone. No interpreters, no headsets, $3 per hour.`,
+    h1: event.headTerm,
     intro: `Running a ${lower} where not everyone speaks the same language? Translync translates the speaker in real time and delivers it to every attendee's phone — no interpreter booth, no receivers to hand out, and nothing for anyone to install.`,
     challenges: [
       `Booking interpreters for ${event.plural} means paying for a full day even when you need two hours, and finding them at all for less common languages`,
@@ -157,18 +202,22 @@ export const TOTAL_PAGES = EVENT_TYPES.length;
 export const LEGACY_REDIRECTS: { source: string; destination: string }[] = (() => {
   const keptIds = EVENT_TYPES.map((e) => e.id);
   const out: { source: string; destination: string }[] = [];
-  for (const id of [...keptIds, ...RETIRED_EVENT_IDS]) {
-    const destination = keptIds.includes(id) ? `/translation/${id}-translation` : "/translation";
+
+  // The 240 language variants of everything that ever existed.
+  for (const id of keptIds) {
     for (const language of FEATURED_LANGUAGES) {
       out.push({
         source: `/translation/${id}-translation-in-${language.toLowerCase()}`,
-        destination,
+        destination: `/translation/${id}-translation`,
       });
     }
   }
-  // The retired event types also lose their bare slug, in case anything links to it.
-  for (const id of RETIRED_EVENT_IDS) {
-    out.push({ source: `/translation/${id}-translation`, destination: "/translation" });
+  for (const { id, to } of RETIRED) {
+    for (const language of FEATURED_LANGUAGES) {
+      out.push({ source: `/translation/${id}-translation-in-${language.toLowerCase()}`, destination: to });
+    }
+    // And the bare slug, which for five of these was a live page until now.
+    out.push({ source: `/translation/${id}-translation`, destination: to });
   }
   return out;
 })();

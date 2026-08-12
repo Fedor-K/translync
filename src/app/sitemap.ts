@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { getAllSlugs } from "@/lib/programmatic-seo";
 import { COMPETITOR_SLUGS } from "@/lib/competitors";
+import { INDEXED_SEGMENTS } from "@/lib/segments";
 import { safeListPosts } from "@/lib/posts-safe";
 
 // Blog posts are published continuously through /api/blog/create, so a sitemap
@@ -10,7 +11,7 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://translync.app";
-  const segments = ["churches", "ngos", "universities", "communities"];
+
 
   const entries: MetadataRoute.Sitemap = [
     // English pages
@@ -21,8 +22,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  // English segment pages
-  for (const seg of segments) {
+  // Only the segments the site actually competes for. The others stay live for
+  // outreach and ads but are noindexed, so advertising them here would contradict
+  // the pages themselves.
+  for (const seg of INDEXED_SEGMENTS) {
     entries.push({ url: `${base}/for/${seg}`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 });
   }
 

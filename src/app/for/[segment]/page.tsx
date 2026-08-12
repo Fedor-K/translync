@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { SEGMENTS, SEGMENT_SLUGS } from "@/lib/segments";
+import { SEGMENTS, SEGMENT_SLUGS, INDEXED_SEGMENTS } from "@/lib/segments";
 import type { Metadata } from "next";
 import HowItWorks from "@/components/HowItWorks";
 import Features from "@/components/Features";
@@ -37,6 +37,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // override each segment page tells Google to index the homepage instead of
     // itself — and Google obeys ("Alternate page with proper canonical tag").
     alternates: { canonical: `https://translync.app/for/${segment}` },
+    // Segments the site does not compete for in search are noindexed rather than
+    // deleted: the page is still where outreach and ads land, and conversion
+    // matters more than coverage. See INDEXED_SEGMENTS for the measured reason.
+    ...(INDEXED_SEGMENTS.includes(segment) ? {} : { robots: { index: false, follow: true } }),
   };
 }
 

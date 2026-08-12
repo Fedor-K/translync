@@ -284,3 +284,18 @@ export const SEGMENTS: Record<string, SegmentContent> = {
 };
 
 export const SEGMENT_SLUGS = Object.keys(SEGMENTS);
+
+/**
+ * Segments the site competes for in search.
+ *
+ * Measured annual revenue potential across the four: churches ~$14,800, NGOs $73,
+ * communities $36, universities $0 — the last three because the translation
+ * phrases their audiences would type barely register, not because the product
+ * cannot serve them.
+ *
+ * So the other three stop being SEO targets: they leave the sitemap and are
+ * noindexed. Their PAGES stay live, because they are where outreach, ads and
+ * direct links land, and conversion matters more than coverage. Removing a
+ * landing page would cost sales; removing it from the index costs nothing.
+ */
+export const INDEXED_SEGMENTS = ["churches"];
