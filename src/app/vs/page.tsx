@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Footer from "@/components/Footer";
+import RelatedPosts from "@/components/RelatedPosts";
+
+// Links continuously-published posts; rebuild hourly.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Translync vs Competitors — Comparison Pages",
@@ -29,10 +33,18 @@ export default function CompareIndex() {
             </a>
           ))}
           <a href="/best-church-translation-app" className="bg-blue-50 rounded-2xl border-2 border-blue-200 p-6 hover:border-blue-400 hover:shadow-md transition">
-            <h2 className="text-lg font-bold text-blue-900 mb-1">Best Church Translation App 2026</h2>
-            <p className="text-sm text-blue-600 mb-3">Top 5 platforms compared</p>
-            <span className="text-blue-700 text-sm font-medium">See ranking &rarr;</span>
+            <h2 className="text-lg font-bold text-blue-900 mb-1">Church Translation Compared</h2>
+            <p className="text-sm text-blue-600 mb-3">Volunteers, interpreters and the five main platforms</p>
+            <span className="text-blue-700 text-sm font-medium">Read the comparison &rarr;</span>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <RelatedPosts
+            match={["vs", "comparison", "alternative", "wordly", "interprefy", "kudo"]}
+            heading="Comparisons and buying guides"
+            limit={4}
+          />
         </div>
       </main>
       <Footer />

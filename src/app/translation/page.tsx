@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import RelatedPosts from "@/components/RelatedPosts";
+
+// Links continuously-published posts; rebuild hourly.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Event Translation Services — Translync",
@@ -40,6 +44,14 @@ export default function TranslationIndexPage() {
               <p className="text-sm text-gray-500">Live translation for {page.plural}</p>
             </a>
           ))}
+        </div>
+
+        <div className="mt-12">
+          <RelatedPosts
+            match={["event", "interpretation", "software"]}
+            heading="Guides for event organizers"
+            limit={4}
+          />
         </div>
       </main>
 

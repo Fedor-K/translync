@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Footer from "@/components/Footer";
+import RelatedPosts from "@/components/RelatedPosts";
+
+// Links continuously-published posts; rebuild hourly.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Zoom Interpretation Alternative — Translync vs Zoom Translation",
@@ -197,6 +201,12 @@ export default function ZoomAlternativePage() {
             ))}
           </div>
         </section>
+
+        <RelatedPosts
+          match={["zoom", "qr code", "simultaneous", "remote"]}
+          heading="Guides on remote and hybrid events"
+          limit={4}
+        />
 
         {/* CTA */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-8 text-center text-white">
