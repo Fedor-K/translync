@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "Terms of Service — Translync",
   description: "Translync terms of service. Rules and conditions for using our real-time translation platform.",
+  alternates: { canonical: "https://translync.app/terms" },
 };
 
 export default function TermsPage() {

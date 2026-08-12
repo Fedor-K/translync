@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "Privacy Policy — Translync",
   description: "Translync privacy policy. How we handle your data during real-time translation sessions.",
+  alternates: { canonical: "https://translync.app/privacy" },
 };
 
 export default function PrivacyPage() {

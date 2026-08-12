@@ -7,6 +7,9 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Translync vs Competitors — Comparison Pages",
   description: "Compare Translync with Wordly, Interactio, KUDO, and Interprefy. See pricing, features, and which platform is right for your events.",
+  // Without this the root layout's hardcoded homepage canonical applies, and the
+  // comparison hub tells Google to index the homepage instead of itself.
+  alternates: { canonical: "https://translync.app/vs" },
 };
 
 export default function CompareIndex() {
