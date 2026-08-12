@@ -7,6 +7,9 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Translation Services for Events — Translync",
   description: `Real-time AI translation for ${TOTAL_PAGES}+ event and language combinations. Find translation for your specific event type and language.`,
+  // Without this the root layout's homepage canonical applies, and the hub that
+  // links every programmatic translation page never gets indexed itself.
+  alternates: { canonical: "https://translync.app/translation" },
 };
 
 export default function TranslationIndexPage() {

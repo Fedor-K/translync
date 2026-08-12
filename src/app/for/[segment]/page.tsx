@@ -28,6 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: data.meta.title,
     description: data.meta.description,
+    // The root layout hardcodes the homepage as canonical, so without this
+    // override each segment page tells Google to index the homepage instead of
+    // itself — and Google obeys ("Alternate page with proper canonical tag").
+    alternates: { canonical: `https://translync.app/for/${segment}` },
   };
 }
 

@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Blog — Translync",
   description: "Tips, guides, and insights about real-time AI translation for events, churches, NGOs, universities, and communities.",
+  // Without this the root layout's homepage canonical applies, and the blog
+  // index — the page that links every post — is never indexed itself.
+  alternates: { canonical: "https://translync.app/blog" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
