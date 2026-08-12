@@ -61,11 +61,20 @@ export default async function RelatedPosts({
   // Google had already declined to fetch. Relevance decides what a reader sees
   // first; the rotation makes sure nothing is orphaned.
   const relevantSlots = Math.max(1, Math.ceil(limit / 2));
-  const chosen = byDate.filter((p) => relevance(p) > 0).slice(0, relevantSlots);
+  const offset = hash(`${heading}|${match.join(",")}`);
+  // Rotate within the relevant tier as well as outside it. Taking the newest
+  // matches meant pages sharing a subject shared their picks, and the posts that
+  // were neither newest-relevant nor lucky in the rotation stayed orphaned.
+  const relevantPool = byDate.filter((p) => relevance(p) > 0);
+  const chosen = relevantPool.length
+    ? Array.from({ length: Math.min(relevantSlots, relevantPool.length) }, (_, i) =>
+        relevantPool[(offset + i) % relevantPool.length],
+      )
+    : [];
   const taken = new Set(chosen.map((p) => p.slug));
   const rest = byDate.filter((p) => !taken.has(p.slug));
   if (rest.length > 0) {
-    const start = hash(`${heading}|${match.join(",")}`) % rest.length;
+    const start = offset % rest.length;
     for (let i = 0; i < rest.length && chosen.length < limit; i++) {
       chosen.push(rest[(start + i) % rest.length]);
     }
