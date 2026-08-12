@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./src/lib/programmatic-seo";
 
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      // The retired event × language matrix: 240 URLs, 25 impressions and zero
+      // clicks between them. Each one 301s to the page that now covers it.
+      ...LEGACY_REDIRECTS.map((r) => ({ ...r, permanent: true })),
+
       { source: "/auth/signup", destination: "/login", permanent: true },
       { source: "/register", destination: "/login", permanent: true },
       { source: "/signup", destination: "/login", permanent: true },

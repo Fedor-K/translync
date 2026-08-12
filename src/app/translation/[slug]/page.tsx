@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProgrammaticPage, getAllSlugs } from "@/lib/programmatic-seo";
+import { getProgrammaticPage, getAllSlugs, FEATURED_LANGUAGES } from "@/lib/programmatic-seo";
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Navbar from "@/components/Navbar";
@@ -31,23 +31,35 @@ export default async function ProgrammaticPage({ params }: Props) {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Service",
-    name: `${page.eventType} Translation in ${page.language}`,
-    description: page.metaDescription,
-    provider: {
-      "@type": "Organization",
-      name: "Translync",
-      url: "https://translync.app",
-    },
-    serviceType: "Real-time AI Translation",
-    areaServed: "Worldwide",
-    availableLanguage: [page.language, "English"],
-    offers: {
-      "@type": "Offer",
-      price: "3.00",
-      priceCurrency: "USD",
-      description: "Per hour per language",
-    },
+    "@graph": [
+      {
+        "@type": "Service",
+        name: `${page.eventType} Translation`,
+        description: page.metaDescription,
+        provider: {
+          "@type": "Organization",
+          name: "Translync",
+          url: "https://translync.app",
+        },
+        serviceType: "Real-time AI Translation",
+        areaServed: "Worldwide",
+        availableLanguage: FEATURED_LANGUAGES,
+        offers: {
+          "@type": "Offer",
+          price: "3.00",
+          priceCurrency: "USD",
+          description: "Per hour per language",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: page.faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+    ],
   };
 
   return (
@@ -57,7 +69,7 @@ export default async function ProgrammaticPage({ params }: Props) {
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Translation Services", href: "/translation" }, { label: `${page.eventType} in ${page.language}` }]} />
+        <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Translation Services", href: "/translation" }, { label: page.eventType }]} />
 
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">{page.h1}</h1>
         <p className="text-lg text-gray-600 leading-relaxed mb-10">{page.intro}</p>
@@ -90,7 +102,7 @@ export default async function ProgrammaticPage({ params }: Props) {
 
         {/* Benefits */}
         <section className="mb-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Translync for {page.language} Translation</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Why organizers choose Translync</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {page.benefits.map((b, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3">
@@ -103,6 +115,25 @@ export default async function ProgrammaticPage({ params }: Props) {
           </div>
         </section>
 
+        {/* Languages — the axis that used to be 16 separate URLs. */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Languages</h2>
+          <p className="text-gray-600 mb-4">
+            Attendees at a {page.eventType.toLowerCase()} each choose their own language, so several can be
+            listening in different ones at the same time. These are the most requested:
+          </p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {FEATURED_LANGUAGES.map((lang) => (
+              <span key={lang} className="bg-white border border-gray-200 text-gray-700 text-sm px-3 py-1.5 rounded-lg">
+                {lang}
+              </span>
+            ))}
+          </div>
+          <p className="text-gray-600 text-sm">
+            70+ languages are supported in total, and you can add one during the session if a guest needs it.
+          </p>
+        </section>
+
         {/* Pricing */}
         <section className="mb-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Pricing</h2>
@@ -112,9 +143,23 @@ export default async function ProgrammaticPage({ params }: Props) {
               <span className="text-gray-500">per hour per language</span>
             </div>
             <p className="text-gray-600 text-sm mb-4">
-              A 1-hour {page.eventType.toLowerCase()} with {page.language} translation costs just $3. Add more languages at $3/hr each.
+              A one-hour {page.eventType.toLowerCase()} in one language costs $3. Three languages for two hours
+              costs $18. Billing is by the minute, so a session that runs short costs less.
             </p>
             <p className="text-sm text-blue-600 font-medium">30 free minutes included with every account — no credit card required.</p>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Common questions</h2>
+          <div className="space-y-4">
+            {page.faqs.map((f) => (
+              <div key={f.q} className="bg-white rounded-xl border border-gray-100 p-5">
+                <h3 className="font-semibold text-gray-900 mb-2">{f.q}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">{f.a}</p>
+              </div>
+            ))}
           </div>
         </section>
 
